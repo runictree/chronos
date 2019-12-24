@@ -1,0 +1,31 @@
+{
+  "name": "zktcp",
+  "version": "0.1.0",
+  "description": "ZKTeco TCP library",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^12.12.21",
+    "gulp": "^4.0.2",
+    "gulp-sourcemaps": "^2.6.5",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "typescript": "^3.7.4"
+  },
+  "author": "Apichart N.",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git"
+  },
+  "keywords": [
+    "ZKTeco",
+    "ZKTLib",
+    "ZKtcp"
+  ],
+  "engines": {
+    "node": ">= 10",
+    "yarn": ">= 1.12.0"
+  }
+}
