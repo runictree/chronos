@@ -8,7 +8,7 @@ export function hexToDate() : Date {
   return new Date()
 }
 
-export function createCheckSum (buffer: Buffer) {
+export function createChecksum (buffer: Buffer) {
   let sum = 0;
   const length = buffer.length
 

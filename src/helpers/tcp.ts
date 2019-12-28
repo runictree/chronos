@@ -12,7 +12,7 @@ export function createHeader (command: number, sessionId: number, replyId: numbe
 
   dataBuffer.copy(buffer, 8)
 
-  const checkSum = utils.createCheckSum(buffer)
+  const checkSum = utils.createChecksum(buffer)
   buffer.writeUInt16LE(checkSum, 2)
 
   replyId = (replyId + 1) % MAX_USHORT
@@ -22,10 +22,6 @@ export function createHeader (command: number, sessionId: number, replyId: numbe
   prefix.writeUInt16LE(buffer.length, 4)
 
   return Buffer.concat([prefix, buffer])
-}
-
-export function isValidHeader() : boolean {
-  return true
 }
 
 export function removeHeader (buffer: Buffer) : Buffer {
