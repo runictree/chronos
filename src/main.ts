@@ -62,10 +62,6 @@ export class Device {
   async open () : Promise<boolean> {
     const data = await this.execute(commandCode.CMD_CONNECT)
 
-    if (!data) {
-      throw new SocketError('EXEC_FAILED')
-    }
-
     const reply = data.readUInt16LE(0)
 
     if (reply !== replyCode.CMD_ACK_OK) {
@@ -84,10 +80,6 @@ export class Device {
   async clearBuffer () : Promise<boolean> {
     const data = await this.execute(commandCode.CMD_FREE_DATA)
 
-    if (!data) {
-      throw new SocketError('EXEC_FAILED')
-    }
-
     const reply = data.readUInt16LE(0)
 
     if (reply !== replyCode.CMD_ACK_OK) {
@@ -100,10 +92,6 @@ export class Device {
   async close () : Promise<boolean> {
     const data = await this.execute(commandCode.CMD_CONNECT)
 
-    if (!data) {
-      throw new SocketError('EXEC_FAILED')
-    }
-
     const reply = data.readUInt16LE(0)
 
     if (reply !== replyCode.CMD_ACK_OK) {
@@ -113,7 +101,7 @@ export class Device {
     return true
   }
 
-  execute (command : number, data? : string) : Promise<Buffer | null> {
+  execute (command : number, data? : string) : Promise<Buffer> {
     return new Promise((resolve, reject) => {
       if (this.sessionId && this.replyId) {
         this.replyId++
@@ -132,5 +120,29 @@ export class Device {
         }
       })
     })
+  }
+
+  async enable () : Promise<boolean> {
+    const data = await this.execute(commandCode.CMD_CONNECT)
+
+    const reply = data.readUInt16LE(0)
+
+    if (reply !== replyCode.CMD_ACK_OK) {
+      throw new SocketError('INVALID_REPLY_CODE')
+    }
+
+    return true
+  }
+
+  async disable () : Promise<boolean> {
+    const data = await this.execute(commandCode.CMD_DISABLEDEVICE)
+
+    const reply = data.readUInt16LE(0)
+
+    if (reply !== replyCode.CMD_ACK_OK) {
+      throw new SocketError('INVALID_REPLY_CODE')
+    }
+
+    return true
   }
 }

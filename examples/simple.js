@@ -1,4 +1,5 @@
 const { Device } = require('../dist/main')
+const { wait } = require('../dist/helpers/utilities')
 
 async function main () {
   try {
@@ -17,6 +18,13 @@ async function main () {
     await d.clearBuffer()
     console.log('buffer was cleared')
 
+    await d.disable()
+    console.log('deviced disabled')
+
+    await wait(5000)
+
+    await d.enable()
+    console.log('deviced enabled')
 
     await d.close()
     const isDisconnected = await d.disconnect()

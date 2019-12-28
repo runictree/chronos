@@ -1,10 +1,10 @@
 import { MAX_USHORT } from './constants'
 
-export function timeToDate() : Date {
+export function timeToDate () : Date {
   return new Date()
 }
 
-export function hexToDate() : Date {
+export function hexToDate () : Date {
   return new Date()
 }
 
@@ -27,14 +27,20 @@ export function createChecksum (buffer: Buffer) {
   return sum
 }
 
-export function decodeRecordDate() : string {
+export function decodeRecordDate () : string {
   return ''
 }
 
-export function decodeUserData() : string {
+export function decodeUserData () : string {
   return ''
 }
 
-export function decodeRealtimeRecordData() : string {
+export function decodeRealtimeRecordData () : string {
   return ''
+}
+
+export function wait (ms: number) : Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => resolve(true), ms)
+  })
 }
