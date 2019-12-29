@@ -2,38 +2,25 @@ const { Device } = require('../dist/main')
 const { wait } = require('../dist/helpers/utilities')
 
 async function main () {
-  try {
-    const d = new Device('192.168.1.237', 4370, 10000)
+  const d = new Device('192.168.1.237', 4370, 10000)
 
-    const isConnected = await d.connect()
-    console.log('is connected', isConnected)
+  await d.connect()
+  console.log('is connected', d.isConnected())
 
-    await d.open()
-    console.log('opened')
+  await d.open()
+  console.log('connection was opened')
 
-    const ref = await d.execute(1502)
-    console.log('reference: ')
-    console.log(ref)
+  await d.clearBuffer()
+  console.log('transmission buffer was cleared')
 
-    await d.clearBuffer()
-    console.log('buffer was cleared')
+  const cap = await d.capacities()
+  console.log('device capacities', cap)
 
-    await d.disable()
-    console.log('deviced disabled')
+  await d.close()
+  console.log('connection was closed')
 
-    await wait(5000)
-
-    await d.enable()
-    console.log('deviced enabled')
-
-    await d.close()
-    const isDisconnected = await d.disconnect()
-    console.log('is disconnected', isDisconnected)
-
-    process.exit(1)
-  } catch (err) {
-    console.log('ERROR:: ', err.code, err.message)
-  }
+  await d.disconnect()
+  console.log('disconnected')
 }
 
 main()

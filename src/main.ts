@@ -9,7 +9,7 @@ export class Device {
   timeout: number
   socket: Socket
   sessionId: number
-  replyId: number
+  requestId: number
 
   constructor(host: string, port: number, timeout: number) {
     this.host = host
@@ -19,7 +19,7 @@ export class Device {
     this.socket.setTimeout(timeout)
 
     this.sessionId = 0
-    this.replyId = 0
+    this.requestId = 0
   }
 
   connect () : Promise<boolean> {
@@ -103,13 +103,16 @@ export class Device {
 
   execute (command : number, data? : string) : Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      if (this.sessionId && this.replyId) {
-        this.replyId++
+      if (this.sessionId) {
+        this.requestId++
+      } else {
+        this.sessionId = 0
+        this.requestId = 0
       }
 
-      const header = tcp.createHeader(command, this.sessionId, this.replyId, data || '')
+      const header = tcp.createHeader(command, this.sessionId, this.requestId, data)
 
-      this.socket.once('data', (data) => {
+      this.socket.on('data', (data) => {
         resolve(tcp.removeHeader(data))
       })
 
@@ -144,5 +147,34 @@ export class Device {
     }
 
     return true
+  }
+
+  async capacities () : Promise<Object> {
+    const data = await this.execute(commandCode.CMD_GET_FREE_SIZES)
+
+    console.log('capacity', data, data.length + ' bytes in total')
+
+    const content = tcp.removeHeader(data)
+
+    return {
+      fingerprint: {
+        capacity: content.readIntLE(68, 4),
+        remaining: content.readIntLE(76, 4),
+        used: content.readIntLE(32, 4)
+      },
+      record: {
+        capacity: content.readIntLE(72, 4),
+        remaining: content.readIntLE(84, 4),
+        used: content.readIntLE(40, 4)
+      },
+      user: {
+        capacity: content.readIntLE(64, 4),
+        remaining: content.readIntLE(80, 4),
+        used: content.readIntLE(24, 4),
+        admin: content.readIntLE(56, 4),
+        password: content.readIntLE(60, 4)
+      },
+      unknown: content.readIntLE(48, 4)
+    }
   }
 }

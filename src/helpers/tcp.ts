@@ -1,22 +1,22 @@
 import { MAX_USHORT } from './constants'
 import * as utils from './utilities'
 
-export function createHeader (command: number, sessionId: number, replyId: number, data: string) : Buffer {
-  const dataBuffer = Buffer.from(data)
+export function createHeader (command: number, sessionId: number, requestId: number, data?: string) : Buffer {
+  const dataBuffer = Buffer.from(data || '')
   const buffer = Buffer.alloc(8 + dataBuffer.length)
 
   buffer.writeUInt16LE(command, 0)
   buffer.writeUInt16LE(0, 2)
   buffer.writeUInt16LE(sessionId, 4)
-  buffer.writeUInt16LE(replyId, 6)
+  buffer.writeUInt16LE(requestId, 6)
 
   dataBuffer.copy(buffer, 8)
 
   const checkSum = utils.createChecksum(buffer)
   buffer.writeUInt16LE(checkSum, 2)
 
-  replyId = (replyId + 1) % MAX_USHORT
-  buffer.writeUInt16LE(replyId, 6)
+  requestId = (requestId + 1) % MAX_USHORT
+  buffer.writeUInt16LE(requestId, 6)
 
   const prefix = Buffer.from([0x50, 0x50, 0x82, 0x7d, 0x13, 0x00, 0x00, 0x00])
   prefix.writeUInt16LE(buffer.length, 4)
