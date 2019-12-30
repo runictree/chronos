@@ -1,6 +1,6 @@
 // Doc: https://github.com/adrobinoga/zk-protocol/blob/master/protocol.md
 
-export const commandCode = Object.freeze({
+export const CommandCodes = Object.freeze({
   /** Begin connection. */
   CMD_CONNECT: 1000,
 
@@ -221,7 +221,7 @@ export const commandCode = Object.freeze({
   CMD_REG_EVENT: 500
 })
 
-export const replyCode = Object.freeze({
+export const ReplyCodes = Object.freeze({
   /** Requested data was prepared, ready to sent back */
   CMD_PREPARE: 1500,
 
@@ -259,7 +259,7 @@ export const replyCode = Object.freeze({
   CMD_ACK_ERROR_DATA: 65531,
 })
 
-export const eventCode = Object.freeze({
+export const EventCodes = Object.freeze({
   /** Attendance entry. */
   EF_ATTLOG: 1,
 
@@ -288,7 +288,7 @@ export const eventCode = Object.freeze({
   EF_ALARM: 512
 })
 
-export const parameters = Object.freeze({
+export const ParamCodes = Object.freeze({
   /** Platform name (string) */
   PR_PLATFORM: '~Platform',
 
@@ -350,7 +350,7 @@ export const parameters = Object.freeze({
   PR_FACE_ON: 'FaceFunOn',
 })
 
-export const deviceParameters = Object.freeze({
+export const DeviceCodes = Object.freeze({
   /**
    * Device ID.
    *
@@ -946,7 +946,7 @@ export const deviceParameters = Object.freeze({
   DP_DOTZ: '~DOTZ'
 })
 
-export const requestCommand = Object.freeze({
+export const RequestCodes = Object.freeze({
   REQ_USERS: Buffer.from([ 0x01, 0x09, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]),
   REQ_ATT_LOG: Buffer.from([ 0x01, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]),
   REQ_REALTIME_MODE: Buffer.from([ 0x01,0x00,0x00, 0x00 ])

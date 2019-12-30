@@ -2,7 +2,7 @@ import { Socket } from 'net'
 import { SocketError } from './SocketError'
 import * as tcp from './helpers/tcp'
 import * as utils from './helpers/utilities'
-import { commandCode, replyCode, requestCommand } from './protocol'
+import { CommandCodes, ReplyCodes, RequestCodes } from './protocol'
 import User from './UserInterface'
 
 export class Device {
@@ -66,11 +66,11 @@ export class Device {
   }
 
   async open () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(commandCode.CMD_CONNECT))
+    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_CONNECT))
 
     const reply = data.readUInt16LE(0)
 
-    if (reply !== replyCode.CMD_ACK_OK) {
+    if (reply !== ReplyCodes.CMD_ACK_OK) {
       throw new SocketError('INVALID_REPLY_CODE')
     }
 
@@ -84,11 +84,11 @@ export class Device {
   }
 
   async clearBuffer () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(commandCode.CMD_FREE_DATA))
+    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_FREE_DATA))
 
     const reply = data.readUInt16LE(0)
 
-    if (reply !== replyCode.CMD_ACK_OK) {
+    if (reply !== ReplyCodes.CMD_ACK_OK) {
       throw new SocketError('INVALID_REPLY_CODE')
     }
 
@@ -96,11 +96,11 @@ export class Device {
   }
 
   async close () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(commandCode.CMD_CONNECT))
+    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_CONNECT))
 
     const reply = data.readUInt16LE(0)
 
-    if (reply !== replyCode.CMD_ACK_OK) {
+    if (reply !== ReplyCodes.CMD_ACK_OK) {
       throw new SocketError('INVALID_REPLY_CODE')
     }
 
@@ -137,7 +137,7 @@ export class Device {
           const reply = data.readUInt16LE(8)
 
           switch (reply) {
-            case replyCode.CMD_ACK_OK:
+            case ReplyCodes.CMD_ACK_OK:
               this.socket.removeListener('data', callback)
 
               if (response.length <= 0) {
@@ -148,11 +148,11 @@ export class Device {
 
               break
 
-            case replyCode.CMD_PREPARE:
+            case ReplyCodes.CMD_PREPARE:
               // prepare reply code, initalize some variables before retrieve data
               break
 
-            case replyCode.CMD_DATA:
+            case ReplyCodes.CMD_DATA:
               concentrate(data)
               break
 
@@ -179,11 +179,11 @@ export class Device {
   }
 
   async enable () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(commandCode.CMD_CONNECT))
+    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_CONNECT))
 
     const reply = data.readUInt16LE(0)
 
-    if (reply !== replyCode.CMD_ACK_OK) {
+    if (reply !== ReplyCodes.CMD_ACK_OK) {
       throw new SocketError('INVALID_REPLY_CODE')
     }
 
@@ -191,11 +191,11 @@ export class Device {
   }
 
   async disable () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(commandCode.CMD_DISABLEDEVICE))
+    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_DISABLEDEVICE))
 
     const reply = data.readUInt16LE(0)
 
-    if (reply !== replyCode.CMD_ACK_OK) {
+    if (reply !== ReplyCodes.CMD_ACK_OK) {
       throw new SocketError('INVALID_REPLY_CODE')
     }
 
@@ -203,11 +203,11 @@ export class Device {
   }
 
   async capacities () : Promise<Object> {
-    const data = tcp.removeHeader(await this.execute(commandCode.CMD_GET_FREE_SIZES))
+    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_GET_FREE_SIZES))
 
     const reply = data.readUInt16LE(0)
 
-    if (reply !== replyCode.CMD_ACK_OK) {
+    if (reply !== ReplyCodes.CMD_ACK_OK) {
       throw new SocketError('INVALID_REPLY_CODE')
     }
 
@@ -236,7 +236,7 @@ export class Device {
   }
 
   async users () : Promise<Array<User>> {
-    const data = await this.execute(commandCode.CMD_DATA_WRRQ, requestCommand.REQ_USERS)
+    const data = await this.execute(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
     const header = tcp.decodeHeader(data)
 
     let content = undefined
@@ -244,12 +244,12 @@ export class Device {
     console.log('data', data)
 
     switch (header.replyCode) {
-      case replyCode.CMD_ACK_DATA:
+      case ReplyCodes.CMD_ACK_DATA:
         // small size data, device will return immediately and ready to use
         content = data.subarray(16)
         break
 
-      case replyCode.CMD_ACK_OK:
+      case ReplyCodes.CMD_ACK_OK:
         // large size data, only header is returned
         // size can get from data.readUInt16LE(16+1) and data.readUInt16LE(16+5)
         // but it do not make sense to has same value in 2 places...
@@ -259,7 +259,7 @@ export class Device {
         params.writeUInt32LE(0, 0)
         params.writeUInt32LE(size, 4)
 
-        const resp = await this.execute(commandCode.CMD_DATA_RDY, params)
+        const resp = await this.execute(CommandCodes.CMD_DATA_RDY, params)
 
         content = resp.subarray(16)
         break
