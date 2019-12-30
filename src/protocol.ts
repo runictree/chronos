@@ -222,6 +222,12 @@ export const commandCode = Object.freeze({
 })
 
 export const replyCode = Object.freeze({
+  /** Requested data was prepared, ready to sent back */
+  CMD_PREPARE: 1500,
+
+  /** Start sending data, after prepared */
+  CMD_DATA: 1501,
+
   /** The request was processed sucessfully. */
   CMD_ACK_OK: 2000,
 
@@ -938,4 +944,10 @@ export const deviceParameters = Object.freeze({
    * Mode: ?
    */
   DP_DOTZ: '~DOTZ'
+})
+
+export const requestCommand = Object.freeze({
+  REQ_USERS: Buffer.from([ 0x01, 0x09, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]),
+  REQ_ATT_LOG: Buffer.from([ 0x01, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]),
+  REQ_REALTIME_MODE: Buffer.from([ 0x01,0x00,0x00, 0x00 ])
 })

@@ -1,16 +1,36 @@
 import { MAX_USHORT } from './constants'
 import * as utils from './utilities'
 
-export function createHeader (command: number, sessionId: number, requestId: number, data?: string) : Buffer {
-  const dataBuffer = Buffer.from(data || '')
-  const buffer = Buffer.alloc(8 + dataBuffer.length)
+interface Header {
+  /** Reply code */
+  replyCode: number,
+
+  /** Session ID */
+  sessionId: number,
+
+  /** Reply ID */
+  replyId: number,
+
+  /** Package size */
+  size: number,
+
+  /** Checksum */
+  checksum: number
+}
+
+export function createHeader (command: number, sessionId: number, requestId: number, params?: Buffer) : Buffer {
+  if (!params) {
+    params = Buffer.from([])
+  }
+
+  const buffer = Buffer.alloc(8 + params.length)
 
   buffer.writeUInt16LE(command, 0)
   buffer.writeUInt16LE(0, 2)
   buffer.writeUInt16LE(sessionId, 4)
   buffer.writeUInt16LE(requestId, 6)
 
-  dataBuffer.copy(buffer, 8)
+  params.copy(buffer, 8)
 
   const checkSum = utils.createChecksum(buffer)
   buffer.writeUInt16LE(checkSum, 2)
@@ -34,4 +54,21 @@ export function removeHeader (buffer: Buffer) : Buffer {
   }
 
   return buffer.slice(8)
+}
+
+export function decodeHeader (buffer: Buffer) : Header {
+  return {
+    replyCode: buffer.readUIntLE(8, 2),
+    sessionId: buffer.readUIntLE(12, 2),
+    replyId: buffer.readUIntLE(14, 2),
+    size: buffer.readUIntLE(4, 2),
+    checksum: buffer.readUIntLE(10, 2)
+  }
+}
+
+export function isValidHeader (buffer: Buffer, replyId: number) : boolean {
+  const header = decodeHeader(buffer)
+
+  return buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0 &&
+    header.replyId === replyId
 }

@@ -1,7 +1,9 @@
 import { Socket } from 'net'
 import { SocketError } from './SocketError'
 import * as tcp from './helpers/tcp'
-import { commandCode, replyCode } from './protocol'
+import * as utils from './helpers/utilities'
+import { commandCode, replyCode, requestCommand } from './protocol'
+import User from './UserInterface'
 
 export class Device {
   host: string
@@ -26,6 +28,8 @@ export class Device {
     return new Promise((resolve, reject) => {
       this.socket.on('error', err => {
         const msg = err.message.split(' ')
+
+        this.socket.removeAllListeners('error')
         reject(new SocketError(msg[1] || err.message))
       })
 
@@ -46,6 +50,8 @@ export class Device {
       if (this.isConnected()) {
         this.socket.on('error', (err) => {
           const msg = err.message.split(' ')
+
+          this.socket.removeAllListeners('error')
           reject(new SocketError(msg[1] || err.message))
         })
 
@@ -60,7 +66,7 @@ export class Device {
   }
 
   async open () : Promise<boolean> {
-    const data = await this.execute(commandCode.CMD_CONNECT)
+    const data = tcp.removeHeader(await this.execute(commandCode.CMD_CONNECT))
 
     const reply = data.readUInt16LE(0)
 
@@ -78,7 +84,7 @@ export class Device {
   }
 
   async clearBuffer () : Promise<boolean> {
-    const data = await this.execute(commandCode.CMD_FREE_DATA)
+    const data = tcp.removeHeader(await this.execute(commandCode.CMD_FREE_DATA))
 
     const reply = data.readUInt16LE(0)
 
@@ -90,7 +96,7 @@ export class Device {
   }
 
   async close () : Promise<boolean> {
-    const data = await this.execute(commandCode.CMD_CONNECT)
+    const data = tcp.removeHeader(await this.execute(commandCode.CMD_CONNECT))
 
     const reply = data.readUInt16LE(0)
 
@@ -101,7 +107,7 @@ export class Device {
     return true
   }
 
-  execute (command : number, data? : string) : Promise<Buffer> {
+  execute (command : number, params? : Buffer) : Promise<Buffer> {
     return new Promise((resolve, reject) => {
       if (this.sessionId) {
         this.requestId++
@@ -110,11 +116,58 @@ export class Device {
         this.requestId = 0
       }
 
-      const header = tcp.createHeader(command, this.sessionId, this.requestId, data)
+      const header = tcp.createHeader(command, this.sessionId, this.requestId, params)
 
-      this.socket.on('data', (data) => {
-        resolve(tcp.removeHeader(data))
-      })
+      let response = Buffer.from([])
+      let buffer = Buffer.from([])
+
+      const concentrate = (data: Buffer) => {
+        buffer = Buffer.concat([ buffer, data ])
+
+        const size = buffer.readUIntLE(4, 2)
+
+        if (buffer.length >= 8 + size) {
+          response = Buffer.concat([ response, buffer.subarray(16, 8 + size) ])
+          buffer = buffer.subarray(8 + size)
+        }
+      }
+
+      const callback = (data: Buffer) => {
+        if (tcp.isValidHeader(data, this.requestId + 1)) {
+          const reply = data.readUInt16LE(8)
+
+          switch (reply) {
+            case replyCode.CMD_ACK_OK:
+              this.socket.removeListener('data', callback)
+
+              if (response.length <= 0) {
+                resolve(data)
+              } else {
+                resolve(Buffer.concat([ data, response ]))
+              }
+
+              break
+
+            case replyCode.CMD_PREPARE:
+              // prepare reply code, initalize some variables before retrieve data
+              break
+
+            case replyCode.CMD_DATA:
+              concentrate(data)
+              break
+
+            default:
+              reject(new SocketError('INVALID_REPLY_CODE'))
+              break
+          }
+
+          return
+        }
+
+        concentrate(data)
+      }
+
+      this.socket.on('data', callback)
 
       this.socket.write(header, (err) => {
         if (err) {
@@ -126,7 +179,7 @@ export class Device {
   }
 
   async enable () : Promise<boolean> {
-    const data = await this.execute(commandCode.CMD_CONNECT)
+    const data = tcp.removeHeader(await this.execute(commandCode.CMD_CONNECT))
 
     const reply = data.readUInt16LE(0)
 
@@ -138,7 +191,7 @@ export class Device {
   }
 
   async disable () : Promise<boolean> {
-    const data = await this.execute(commandCode.CMD_DISABLEDEVICE)
+    const data = tcp.removeHeader(await this.execute(commandCode.CMD_DISABLEDEVICE))
 
     const reply = data.readUInt16LE(0)
 
@@ -150,9 +203,13 @@ export class Device {
   }
 
   async capacities () : Promise<Object> {
-    const data = await this.execute(commandCode.CMD_GET_FREE_SIZES)
+    const data = tcp.removeHeader(await this.execute(commandCode.CMD_GET_FREE_SIZES))
 
-    console.log('capacity', data, data.length + ' bytes in total')
+    const reply = data.readUInt16LE(0)
+
+    if (reply !== replyCode.CMD_ACK_OK) {
+      throw new SocketError('INVALID_REPLY_CODE')
+    }
 
     const content = tcp.removeHeader(data)
 
@@ -176,5 +233,57 @@ export class Device {
       },
       unknown: content.readIntLE(48, 4)
     }
+  }
+
+  async users () : Promise<Array<User>> {
+    const data = await this.execute(commandCode.CMD_DATA_WRRQ, requestCommand.REQ_USERS)
+    const header = tcp.decodeHeader(data)
+
+    let content = undefined
+
+    console.log('data', data)
+
+    switch (header.replyCode) {
+      case replyCode.CMD_ACK_DATA:
+        // small size data, device will return immediately and ready to use
+        content = data.subarray(16)
+        break
+
+      case replyCode.CMD_ACK_OK:
+        // large size data, only header is returned
+        // size can get from data.readUInt16LE(16+1) and data.readUInt16LE(16+5)
+        // but it do not make sense to has same value in 2 places...
+        const size = data.readUInt16LE(17)
+
+        const params = Buffer.alloc(8)
+        params.writeUInt32LE(0, 0)
+        params.writeUInt32LE(size, 4)
+
+        const resp = await this.execute(commandCode.CMD_DATA_RDY, params)
+
+        content = resp.subarray(16)
+        break
+
+      default:
+        throw new SocketError('INVALID_REPLY_CODE')
+    }
+
+    const users : Array<User> = []
+    const size = content.length
+    const USER_DATA_SIZE = 72
+
+    let offset = 4
+    let end = offset + USER_DATA_SIZE
+
+    while (end <= size) {
+      const sample = content.subarray(offset, end)
+      const user = utils.decodeUserData(sample)
+      users.push(user)
+
+      offset += USER_DATA_SIZE
+      end = offset + USER_DATA_SIZE
+    }
+
+    return users
   }
 }

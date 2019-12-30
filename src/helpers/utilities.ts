@@ -1,4 +1,5 @@
 import { MAX_USHORT } from './constants'
+import User from '../UserInterface'
 
 export function timeToDate () : Date {
   return new Date()
@@ -31,8 +32,15 @@ export function decodeRecordDate () : string {
   return ''
 }
 
-export function decodeUserData () : string {
-  return ''
+export function decodeUserData (buffer: Buffer) : User {
+  return {
+    id: buffer.readUIntLE(0, 2),
+    role: buffer.readUIntLE(2, 1),
+    password: buffer.subarray(3, 3 + 8).toString('ascii').split('\0').shift(),
+    name: buffer.subarray(11).toString('ascii').split('\0').shift(),
+    card: buffer.readUIntLE(35, 4),
+    uid: buffer.subarray(48, 48 + 9).toString('ascii').split('\0').shift()
+  }
 }
 
 export function decodeRealtimeRecordData () : string {
