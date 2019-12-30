@@ -178,6 +178,34 @@ export class Device {
     })
   }
 
+  async run (command : number, params? : Buffer) : Promise<Buffer> {
+    const data = await this.execute(command, params)
+    const header = tcp.decodeHeader(data)
+
+    switch (header.replyCode) {
+      case ReplyCodes.CMD_ACK_DATA:
+        // small size data, device will return immediately and ready to use
+        return data
+
+      case ReplyCodes.CMD_ACK_OK:
+        // large size data, only header is returned
+        // size can get from data.readUInt16LE(16+1) and data.readUInt16LE(16+5)
+        // but it do not make sense to has same value in 2 places...
+        const size = data.readUInt16LE(17)
+
+        const requestParams = Buffer.alloc(8)
+        requestParams.writeUInt32LE(0, 0)
+        requestParams.writeUInt32LE(size, 4)
+
+        const resp = await this.execute(CommandCodes.CMD_DATA_RDY, requestParams)
+
+        return resp
+
+      default:
+        throw new SocketError('INVALID_REPLY_CODE')
+    }
+  }
+
   async enable () : Promise<boolean> {
     const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_CONNECT))
 
@@ -236,37 +264,8 @@ export class Device {
   }
 
   async users () : Promise<Array<User>> {
-    const data = await this.execute(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
-    const header = tcp.decodeHeader(data)
-
-    let content = undefined
-
-    console.log('data', data)
-
-    switch (header.replyCode) {
-      case ReplyCodes.CMD_ACK_DATA:
-        // small size data, device will return immediately and ready to use
-        content = data.subarray(16)
-        break
-
-      case ReplyCodes.CMD_ACK_OK:
-        // large size data, only header is returned
-        // size can get from data.readUInt16LE(16+1) and data.readUInt16LE(16+5)
-        // but it do not make sense to has same value in 2 places...
-        const size = data.readUInt16LE(17)
-
-        const params = Buffer.alloc(8)
-        params.writeUInt32LE(0, 0)
-        params.writeUInt32LE(size, 4)
-
-        const resp = await this.execute(CommandCodes.CMD_DATA_RDY, params)
-
-        content = resp.subarray(16)
-        break
-
-      default:
-        throw new SocketError('INVALID_REPLY_CODE')
-    }
+    const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
+    const content = data.subarray(16)
 
     const users : Array<User> = []
     const size = content.length
