@@ -3,8 +3,8 @@ import { SocketError } from './SocketError'
 import * as tcp from './helpers/tcp'
 import * as utils from './helpers/utilities'
 import { CommandCodes, ReplyCodes, RequestCodes } from './protocol'
-import User from './UserInterface'
-import { AttendanceRecord } from './AttendanceRecordInterface'
+import { User } from './User'
+import { AttendanceRecord } from './AttendanceRecord'
 
 export class Device {
   host: string

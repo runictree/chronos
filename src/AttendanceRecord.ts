@@ -1,6 +1,6 @@
 export interface AttendanceRecord {
   id: number,
-  userId: string,
+  userId?: string,
   verifyMethod: number,
   timestamp: Date,
   verifyState: number

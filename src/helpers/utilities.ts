@@ -1,6 +1,6 @@
 import { MAX_USHORT } from './constants'
-import User from '../UserInterface'
-import { AttendanceRecord } from '../AttendanceRecordInterface'
+import { User } from '../User'
+import { AttendanceRecord } from '../AttendanceRecord'
 
 export function timeToDate (time: number) : Date {
   const second = time % 60
@@ -39,7 +39,7 @@ export function createChecksum (buffer: Buffer) {
 export function decodeRecordData (buffer: Buffer) : AttendanceRecord {
   return {
     id: buffer.readUInt16LE(0),
-    userId: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift() || '',
+    userId: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift(),
     verifyMethod: buffer.readUInt8(26),
     timestamp: timeToDate(buffer.readUInt32LE(27)),
     verifyState: buffer.readUInt8(31)
@@ -49,11 +49,16 @@ export function decodeRecordData (buffer: Buffer) : AttendanceRecord {
 export function decodeUserData (buffer: Buffer) : User {
   return {
     id: buffer.readUInt16LE(0),
-    role: buffer.readUInt8(2),
+    permissionToken: buffer.readUInt8(2),
     password: buffer.subarray(3, 3 + 8).toString('ascii').split('\0').shift(),
-    name: buffer.subarray(11).toString('ascii').split('\0').shift(),
-    card: buffer.readUInt32LE(35),
-    uid: buffer.subarray(48, 48 + 9).toString('ascii').split('\0').shift()
+    name: buffer.subarray(11, 11 + 24).toString('ascii').split('\0').shift(),
+    cardNo: buffer.readUInt32LE(35),
+    groupNo: buffer.readUInt8(39),
+    tzFlag: buffer.readUInt16LE(40),
+    tz1: buffer.readUInt16LE(42),
+    tz2: buffer.readUInt16LE(44),
+    tz3: buffer.readUInt16LE(46),
+    userId: buffer.subarray(48, 48 + 9).toString('ascii').split('\0').shift()
   }
 }
 
