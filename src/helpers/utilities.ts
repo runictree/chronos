@@ -48,11 +48,11 @@ export function decodeRecordData (buffer: Buffer) : AttendanceRecord {
 
 export function decodeUserData (buffer: Buffer) : User {
   return {
-    id: buffer.readUIntLE(0, 2),
-    role: buffer.readUIntLE(2, 1),
+    id: buffer.readUInt16LE(0),
+    role: buffer.readUInt8(2),
     password: buffer.subarray(3, 3 + 8).toString('ascii').split('\0').shift(),
     name: buffer.subarray(11).toString('ascii').split('\0').shift(),
-    card: buffer.readUIntLE(35, 4),
+    card: buffer.readUInt32LE(35),
     uid: buffer.subarray(48, 48 + 9).toString('ascii').split('\0').shift()
   }
 }

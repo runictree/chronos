@@ -125,7 +125,7 @@ export class Device {
       const concentrate = (data: Buffer) => {
         buffer = Buffer.concat([ buffer, data ])
 
-        const size = buffer.readUIntLE(4, 2)
+        const size = buffer.readUInt16LE(4)
 
         if (buffer.length >= 8 + size) {
           response = Buffer.concat([ response, buffer.subarray(16, 8 + size) ])
