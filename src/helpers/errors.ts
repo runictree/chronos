@@ -10,5 +10,6 @@ export const errors : { [key: string]: string } = Object.freeze({
   RESPONSE_REPEAT: 'Device response with CMD_ACK_REPEAT',
   RESPONSE_ERROR_CMD: 'Device response with CMD_ACK_ERROR_CMD',
   RESPONSE_ERROR_INIT: 'Device reponse with CMD_ACK_ERROR_INIT',
-  RESPONSE_ERROR_DATA: 'Device response with CMD_ACK_ERROR_DATA'
+  RESPONSE_ERROR_DATA: 'Device response with CMD_ACK_ERROR_DATA',
+  UNMATCH_CONTENT_SIZE: 'Reported content size is unmatch with transferred content size, (partial transferred)'
 })

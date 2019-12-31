@@ -58,11 +58,11 @@ export function removeHeader (buffer: Buffer) : Buffer {
 
 export function decodeHeader (buffer: Buffer) : Header {
   return {
-    replyCode: buffer.readUIntLE(8, 2),
-    sessionId: buffer.readUIntLE(12, 2),
-    replyId: buffer.readUIntLE(14, 2),
-    size: buffer.readUIntLE(4, 2),
-    checksum: buffer.readUIntLE(10, 2)
+    replyCode: buffer.readUInt16LE(8),
+    sessionId: buffer.readUInt16LE(12),
+    replyId: buffer.readUInt16LE(14),
+    size: buffer.readUInt16LE(4),
+    checksum: buffer.readUInt16LE(10)
   }
 }
 

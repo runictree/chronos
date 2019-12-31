@@ -223,7 +223,7 @@ export const CommandCodes = Object.freeze({
 
 export const ReplyCodes = Object.freeze({
   /** Requested data was prepared, ready to sent back */
-  CMD_PREPARE: 1500,
+  CMD_PREPARE_DATA: 1500,
 
   /** Start sending data, after prepared */
   CMD_DATA: 1501,

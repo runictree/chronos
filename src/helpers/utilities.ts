@@ -1,8 +1,16 @@
 import { MAX_USHORT } from './constants'
 import User from '../UserInterface'
+import { AttendanceRecord } from '../AttendanceRecordInterface'
 
-export function timeToDate () : Date {
-  return new Date()
+export function timeToDate (time: number) : Date {
+  const second = time % 60
+  const minute = (time / 60) % 60
+  const hour = (time / 60 * 60) % 24
+  const day = ((time / (60 * 60 * 24)) % 31) + 1
+  const month = ((time / (60 * 60 * 24 * 31)) % 12)
+  const year = (time / (60 * 60 * 24 * 31 * 12)) + 2000
+
+  return new Date(year, month, day, hour, minute, second)
 }
 
 export function hexToDate () : Date {
@@ -28,8 +36,14 @@ export function createChecksum (buffer: Buffer) {
   return sum
 }
 
-export function decodeRecordDate () : string {
-  return ''
+export function decodeRecordData (buffer: Buffer) : AttendanceRecord {
+  return {
+    id: buffer.readUInt16LE(0),
+    userId: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift() || '',
+    verifyMethod: buffer.readUInt8(26),
+    timestamp: timeToDate(buffer.readUInt32LE(27)),
+    verifyState: buffer.readUInt8(31)
+  }
 }
 
 export function decodeUserData (buffer: Buffer) : User {

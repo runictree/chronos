@@ -17,9 +17,14 @@ async function main () {
     // const cap = await d.capacities()
     // console.log('device capacities', cap)
 
-    const users = await d.users()
-    console.log('user information was received')
-    console.log('user no. 288', users[287])
+    // const users = await d.users()
+    // console.log('user information was received')
+    // console.log('user no. 288', users[287])
+
+    const att = await d.attendenceRecords()
+    console.log('attendence records was retrieved')
+    console.log('records idx 0', att[0])
+    console.log('last record', att[att.length - 1])
 
     await d.close()
     console.log('connection was closed')

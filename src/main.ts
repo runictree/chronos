@@ -4,6 +4,7 @@ import * as tcp from './helpers/tcp'
 import * as utils from './helpers/utilities'
 import { CommandCodes, ReplyCodes, RequestCodes } from './protocol'
 import User from './UserInterface'
+import { AttendanceRecord } from './AttendanceRecordInterface'
 
 export class Device {
   host: string
@@ -148,7 +149,7 @@ export class Device {
 
               break
 
-            case ReplyCodes.CMD_PREPARE:
+            case ReplyCodes.CMD_PREPARE_DATA:
               // prepare reply code, initalize some variables before retrieve data
               break
 
@@ -189,9 +190,9 @@ export class Device {
 
       case ReplyCodes.CMD_ACK_OK:
         // large size data, only header is returned
-        // size can get from data.readUInt16LE(16+1) and data.readUInt16LE(16+5)
+        // size can get from data.readUInt32LE(16+1) and data.readUInt32LE(16+5)
         // but it do not make sense to has same value in 2 places...
-        const size = data.readUInt16LE(17)
+        const size = data.readUInt32LE(17)
 
         const requestParams = Buffer.alloc(8)
         requestParams.writeUInt32LE(0, 0)
@@ -267,6 +268,11 @@ export class Device {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
     const content = data.subarray(16)
 
+    const contentSize = content.readUInt32LE(0)
+    if (contentSize !== content.length - 4) {
+      throw new SocketError('UNMATCH_CONTENT_SIZE')
+    }
+
     const users : Array<User> = []
     const size = content.length
     const USER_DATA_SIZE = 72
@@ -284,5 +290,34 @@ export class Device {
     }
 
     return users
+  }
+
+  async attendenceRecords () : Promise<Array<AttendanceRecord>> {
+    const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
+    const content = data.subarray(16)
+
+    const contentSize = content.readUInt32LE(0)
+
+    if (contentSize !== content.length - 4) {
+      throw new SocketError('UNMATCH_CONTENT_SIZE')
+    }
+
+    const records : Array<AttendanceRecord> = []
+    const size = content.length
+    const RECORD_DATA_SIZE = 40
+
+    let offset = 4
+    let end = offset + RECORD_DATA_SIZE
+
+    while (end <= size) {
+      const sample = content.subarray(offset, end)
+      const record = utils.decodeRecordData(sample)
+      records.push(record)
+
+      offset += RECORD_DATA_SIZE
+      end = offset + RECORD_DATA_SIZE
+    }
+
+    return records
   }
 }
