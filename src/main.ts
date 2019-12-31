@@ -72,7 +72,7 @@ export class Device {
     const reply = data.readUInt16LE(0)
 
     if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE')
+      throw new SocketError('INVALID_REPLY_CODE', reply)
     }
 
     this.sessionId = data.readUInt16LE(4)
@@ -90,7 +90,7 @@ export class Device {
     const reply = data.readUInt16LE(0)
 
     if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE')
+      throw new SocketError('INVALID_REPLY_CODE', reply)
     }
 
     return true
@@ -102,7 +102,7 @@ export class Device {
     const reply = data.readUInt16LE(0)
 
     if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE')
+      throw new SocketError('INVALID_REPLY_CODE', reply)
     }
 
     return true
@@ -158,7 +158,7 @@ export class Device {
               break
 
             default:
-              reject(new SocketError('INVALID_REPLY_CODE'))
+              reject(new SocketError('INVALID_REPLY_CODE', reply))
               break
           }
 
@@ -203,7 +203,7 @@ export class Device {
         return resp
 
       default:
-        throw new SocketError('INVALID_REPLY_CODE')
+        throw new SocketError('INVALID_REPLY_CODE', header.replyCode)
     }
   }
 
@@ -213,7 +213,7 @@ export class Device {
     const reply = data.readUInt16LE(0)
 
     if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE')
+      throw new SocketError('INVALID_REPLY_CODE', reply)
     }
 
     return true
@@ -225,7 +225,7 @@ export class Device {
     const reply = data.readUInt16LE(0)
 
     if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE')
+      throw new SocketError('INVALID_REPLY_CODE', reply)
     }
 
     return true
@@ -237,7 +237,7 @@ export class Device {
     const reply = data.readUInt16LE(0)
 
     if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE')
+      throw new SocketError('INVALID_REPLY_CODE', reply)
     }
 
     const content = tcp.removeHeader(data)

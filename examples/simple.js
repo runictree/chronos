@@ -2,7 +2,8 @@ const { Device } = require('../dist/main')
 const { wait } = require('../dist/helpers/utilities')
 
 async function main () {
-  const d = new Device('192.168.1.237', 4370, 10000)
+  // const d = new Device('192.168.1.237', 4370, 10000)
+  const d = new Device('lrcem.fujiko.biz', 4370, 10000)
 
   try {
     await d.connect()
@@ -32,7 +33,7 @@ async function main () {
     await d.disconnect()
     console.log('disconnected')
   } catch (err) {
-    console.log(err.code, err.message)
+    console.log(err.code, '=>', err.message, '<=>', err.params)
     if (d.isConnected()) {
       d.disconnect()
     }
