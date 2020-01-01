@@ -1,7 +1,7 @@
 {
-  "name": "zktcp",
-  "version": "0.1.0",
-  "description": "ZKTeco TCP library",
+  "name": "chronos",
+  "version": "0.1.0-dev",
+  "description": "ZKTeco Time Attendance Library for Node.js",
   "main": "index.js",
   "scripts": {
     "build": "tsc"

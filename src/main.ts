@@ -6,7 +6,7 @@ import { CommandCodes, ReplyCodes, RequestCodes } from './protocol'
 import { User } from './User'
 import { AttendanceRecord } from './AttendanceRecord'
 
-export class Device {
+export class TimeAttendance {
   host: string
   port: number
   timeout: number
@@ -292,7 +292,7 @@ export class Device {
     return users
   }
 
-  async attendenceRecords () : Promise<Array<AttendanceRecord>> {
+  async attendanceRecords () : Promise<Array<AttendanceRecord>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
     const content = data.subarray(16)
 
