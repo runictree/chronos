@@ -27,12 +27,12 @@ export class TimeAttendance {
 
   connect () : Promise<boolean> {
     return new Promise((resolve, reject) => {
-      this.socket.on('error', err => {
-        const msg = err.message.split(' ')
+      const errorCallback = (error: NodeJS.ErrnoException) => {
+        this.socket.removeListener('error', errorCallback)
+        reject(new SocketError(error.code || error.message))
+      }
 
-        this.socket.removeAllListeners('error')
-        reject(new SocketError(msg[1] || err.message))
-      })
+      this.socket.on('error', errorCallback)
 
       this.socket.once('connect', () => {
         resolve(true)
@@ -48,13 +48,13 @@ export class TimeAttendance {
 
   disconnect () : Promise<boolean> {
     return new Promise((resolve, reject) => {
-      if (this.isConnected()) {
-        this.socket.on('error', (err) => {
-          const msg = err.message.split(' ')
+      const errorCallback = (error: NodeJS.ErrnoException) => {
+        this.socket.removeListener('error', errorCallback)
+        reject(new SocketError(error.code || error.message))
+      }
 
-          this.socket.removeAllListeners('error')
-          reject(new SocketError(msg[1] || err.message))
-        })
+      if (this.isConnected()) {
+        this.socket.on('error', errorCallback)
 
         this.socket.removeAllListeners()
         this.socket.end(() => {
@@ -133,13 +133,13 @@ export class TimeAttendance {
         }
       }
 
-      const callback = (data: Buffer) => {
+      const dataCallback = (data: Buffer) => {
         if (tcp.isValidHeader(data, this.requestId + 1)) {
           const reply = data.readUInt16LE(8)
 
           switch (reply) {
             case ReplyCodes.CMD_ACK_OK:
-              this.socket.removeListener('data', callback)
+              this.socket.removeListener('data', dataCallback)
 
               if (response.length <= 0) {
                 resolve(data)
@@ -157,6 +157,9 @@ export class TimeAttendance {
               concentrate(data)
               break
 
+            case ReplyCodes.CMD_ACK_UNAUTH:
+              reject(new SocketError('UNAUTHORIZED'))
+
             default:
               reject(new SocketError('INVALID_REPLY_CODE', reply))
               break
@@ -168,14 +171,16 @@ export class TimeAttendance {
         concentrate(data)
       }
 
-      this.socket.on('data', callback)
+      this.socket.on('data', dataCallback)
 
-      this.socket.write(header, (err) => {
-        if (err) {
-          const msg = err.message.split(' ')
-          reject(new SocketError(msg[1] || err.message))
-        }
-      })
+      const errorCallback = (error: NodeJS.ErrnoException) => {
+        this.socket.removeListener('error', errorCallback)
+        reject(new SocketError(error.code || error.message))
+      }
+
+      this.socket.on('error', errorCallback)
+
+      this.socket.write(header)
     })
   }
 
@@ -244,23 +249,23 @@ export class TimeAttendance {
 
     return {
       fingerprint: {
-        capacity: content.readIntLE(68, 4),
-        remaining: content.readIntLE(76, 4),
-        used: content.readIntLE(32, 4)
+        capacity: content.readUInt32LE(68),
+        remaining: content.readUInt32LE(76),
+        used: content.readUInt32LE(32)
       },
       record: {
-        capacity: content.readIntLE(72, 4),
-        remaining: content.readIntLE(84, 4),
-        used: content.readIntLE(40, 4)
+        capacity: content.readUInt32LE(72),
+        remaining: content.readUInt32LE(84),
+        used: content.readUInt32LE(40)
       },
       user: {
-        capacity: content.readIntLE(64, 4),
-        remaining: content.readIntLE(80, 4),
-        used: content.readIntLE(24, 4),
-        admin: content.readIntLE(56, 4),
-        password: content.readIntLE(60, 4)
+        capacity: content.readUInt32LE(64),
+        remaining: content.readUInt32LE(80),
+        used: content.readUInt32LE(24),
+        admin: content.readUInt32LE(56),
+        password: content.readUInt32LE(60)
       },
-      unknown: content.readIntLE(48, 4)
+      unknown: content.readUInt32LE(48)
     }
   }
 
