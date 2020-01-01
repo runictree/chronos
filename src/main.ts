@@ -249,23 +249,23 @@ export class TimeAttendance {
 
     return {
       fingerprint: {
-        capacity: content.readIntLE(68, 4),
-        remaining: content.readIntLE(76, 4),
-        used: content.readIntLE(32, 4)
+        capacity: content.readUInt32LE(68),
+        remaining: content.readUInt32LE(76),
+        used: content.readUInt32LE(32)
       },
       record: {
-        capacity: content.readIntLE(72, 4),
-        remaining: content.readIntLE(84, 4),
-        used: content.readIntLE(40, 4)
+        capacity: content.readUInt32LE(72),
+        remaining: content.readUInt32LE(84),
+        used: content.readUInt32LE(40)
       },
       user: {
-        capacity: content.readIntLE(64, 4),
-        remaining: content.readIntLE(80, 4),
-        used: content.readIntLE(24, 4),
-        admin: content.readIntLE(56, 4),
-        password: content.readIntLE(60, 4)
+        capacity: content.readUInt32LE(64),
+        remaining: content.readUInt32LE(80),
+        used: content.readUInt32LE(24),
+        admin: content.readUInt32LE(56),
+        password: content.readUInt32LE(60)
       },
-      unknown: content.readIntLE(48, 4)
+      unknown: content.readUInt32LE(48)
     }
   }
 
