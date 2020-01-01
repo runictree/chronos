@@ -157,6 +157,9 @@ export class TimeAttendance {
               concentrate(data)
               break
 
+            case ReplyCodes.CMD_ACK_UNAUTH:
+              reject(new SocketError('UNAUTHORIZED'))
+
             default:
               reject(new SocketError('INVALID_REPLY_CODE', reply))
               break
