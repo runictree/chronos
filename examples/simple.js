@@ -9,6 +9,7 @@ async function main () {
 
   try {
     await d.connect()
+
     console.log('is connected', d.isConnected())
 
     await d.open()

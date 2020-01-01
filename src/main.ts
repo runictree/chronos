@@ -27,12 +27,12 @@ export class TimeAttendance {
 
   connect () : Promise<boolean> {
     return new Promise((resolve, reject) => {
-      this.socket.on('error', err => {
-        const msg = err.message.split(' ')
+      const errorCallback = (error: NodeJS.ErrnoException) => {
+        this.socket.removeListener('error', errorCallback)
+        reject(new SocketError(error.code || error.message))
+      }
 
-        this.socket.removeAllListeners('error')
-        reject(new SocketError(msg[1] || err.message))
-      })
+      this.socket.on('error', errorCallback)
 
       this.socket.once('connect', () => {
         resolve(true)
@@ -48,13 +48,13 @@ export class TimeAttendance {
 
   disconnect () : Promise<boolean> {
     return new Promise((resolve, reject) => {
-      if (this.isConnected()) {
-        this.socket.on('error', (err) => {
-          const msg = err.message.split(' ')
+      const errorCallback = (error: NodeJS.ErrnoException) => {
+        this.socket.removeListener('error', errorCallback)
+        reject(new SocketError(error.code || error.message))
+      }
 
-          this.socket.removeAllListeners('error')
-          reject(new SocketError(msg[1] || err.message))
-        })
+      if (this.isConnected()) {
+        this.socket.on('error', errorCallback)
 
         this.socket.removeAllListeners()
         this.socket.end(() => {
@@ -133,13 +133,13 @@ export class TimeAttendance {
         }
       }
 
-      const callback = (data: Buffer) => {
+      const dataCallback = (data: Buffer) => {
         if (tcp.isValidHeader(data, this.requestId + 1)) {
           const reply = data.readUInt16LE(8)
 
           switch (reply) {
             case ReplyCodes.CMD_ACK_OK:
-              this.socket.removeListener('data', callback)
+              this.socket.removeListener('data', dataCallback)
 
               if (response.length <= 0) {
                 resolve(data)
@@ -171,14 +171,16 @@ export class TimeAttendance {
         concentrate(data)
       }
 
-      this.socket.on('data', callback)
+      this.socket.on('data', dataCallback)
 
-      this.socket.write(header, (err) => {
-        if (err) {
-          const msg = err.message.split(' ')
-          reject(new SocketError(msg[1] || err.message))
-        }
-      })
+      const errorCallback = (error: NodeJS.ErrnoException) => {
+        this.socket.removeListener('error', errorCallback)
+        reject(new SocketError(error.code || error.message))
+      }
+
+      this.socket.on('error', errorCallback)
+
+      this.socket.write(header)
     })
   }
 
