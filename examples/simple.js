@@ -36,7 +36,7 @@ async function main () {
     await d.disconnect()
     console.log('disconnected')
   } catch (err) {
-    console.log(err.code, '=>', err.message, '<=>', err.params)
+    console.log(err.code, '=>', err.message, '=>>', err.params)
     if (d.isConnected()) {
       d.disconnect()
     }

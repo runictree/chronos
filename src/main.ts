@@ -121,6 +121,7 @@ export class TimeAttendance {
 
       let response = Buffer.from([])
       let buffer = Buffer.from([])
+      let timeoutWatcher : NodeJS.Timeout | undefined = undefined
 
       const concentrate = (data: Buffer) => {
         buffer = Buffer.concat([ buffer, data ])
@@ -134,6 +135,10 @@ export class TimeAttendance {
       }
 
       const dataCallback = (data: Buffer) => {
+        if (timeoutWatcher) {
+          clearTimeout(timeoutWatcher)
+        }
+
         if (tcp.isValidHeader(data, this.requestId + 1)) {
           const reply = data.readUInt16LE(8)
 
@@ -175,10 +180,27 @@ export class TimeAttendance {
 
       const errorCallback = (error: NodeJS.ErrnoException) => {
         this.socket.removeListener('error', errorCallback)
+
+        if (timeoutWatcher) {
+          clearTimeout(timeoutWatcher)
+        }
+
         reject(new SocketError(error.code || error.message))
       }
 
       this.socket.on('error', errorCallback)
+
+      const timeoutWatcherSetup = () => {
+        if (timeoutWatcher) {
+          clearTimeout(timeoutWatcher)
+        }
+
+        timeoutWatcher = setTimeout(() => {
+          reject(new SocketError('EXEC_TIMEDOUT'))
+        }, this.timeout)
+      }
+
+      timeoutWatcherSetup()
 
       this.socket.write(header)
     })
