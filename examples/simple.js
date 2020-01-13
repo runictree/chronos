@@ -23,11 +23,12 @@ async function main () {
 
     const users = await d.users()
     console.log('user information was received')
-    console.log('user no. 288', users[287])
+    console.log('first user', users[0])
+    console.log('last user', users[users.length - 1])
 
     const att = await d.attendanceRecords()
     console.log('attendence records was retrieved')
-    console.log('records idx 0', att[0])
+    console.log('first record', att[0])
     console.log('last record', att[att.length - 1])
 
     await d.close()

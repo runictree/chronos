@@ -19,7 +19,6 @@ export class TimeAttendance {
     this.port = port
     this.timeout = timeout
     this.socket = new Socket()
-    this.socket.setTimeout(timeout)
 
     this.sessionId = 0
     this.requestId = 0
@@ -135,9 +134,7 @@ export class TimeAttendance {
       }
 
       const dataCallback = (data: Buffer) => {
-        if (timeoutWatcher) {
-          clearTimeout(timeoutWatcher)
-        }
+        timeoutWatcherSetup()
 
         if (tcp.isValidHeader(data, this.requestId + 1)) {
           const reply = data.readUInt16LE(8)
