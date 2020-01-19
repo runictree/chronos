@@ -266,6 +266,22 @@ export class TimeAttendance {
     }
   }
 
+  async firmwareVersion () : Promise<string> {
+    const data = await this.execute(CommandCodes.CMD_GET_VERSION)
+
+    tcp.isOk(data)
+
+    return tcp.removeHeader(data).toString()
+  }
+
+  async getTime () : Promise<Date> {
+    const data = await this.execute(CommandCodes.CMD_GET_TIME)
+
+    tcp.isOk(data)
+
+    return utils.timeToDate(tcp.removeHeader(data).readUInt32LE(0))
+  }
+
   async users () : Promise<Array<User>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
     const content = tcp.removeHeader(data)
