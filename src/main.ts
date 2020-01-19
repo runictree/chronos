@@ -66,15 +66,13 @@ export class TimeAttendance {
   }
 
   async open () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_CONNECT))
+    const data = await this.execute(CommandCodes.CMD_CONNECT)
 
-    const reply = data.readUInt16LE(0)
+    tcp.isOk(data)
 
-    if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE', reply)
-    }
+    const header = tcp.decodeHeader(data)
 
-    this.sessionId = data.readUInt16LE(4)
+    this.sessionId = header.sessionId
 
     if (!this.sessionId) {
       throw new SocketError('NO_SESSION')
@@ -84,27 +82,15 @@ export class TimeAttendance {
   }
 
   async clearBuffer () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_FREE_DATA))
+    const data = await this.execute(CommandCodes.CMD_FREE_DATA)
 
-    const reply = data.readUInt16LE(0)
-
-    if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE', reply)
-    }
-
-    return true
+    return tcp.isOk(data)
   }
 
   async close () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_CONNECT))
+    const data = await this.execute(CommandCodes.CMD_CONNECT)
 
-    const reply = data.readUInt16LE(0)
-
-    if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE', reply)
-    }
-
-    return true
+    return tcp.isOk(data)
   }
 
   execute (command : number, params? : Buffer) : Promise<Buffer> {
@@ -122,6 +108,16 @@ export class TimeAttendance {
       let buffer = Buffer.from([])
       let timeoutWatcher : NodeJS.Timeout | undefined = undefined
 
+      const timeoutWatcherSetup = () => {
+        if (timeoutWatcher) {
+          clearTimeout(timeoutWatcher)
+        }
+
+        timeoutWatcher = setTimeout(() => {
+          reject(new SocketError('EXEC_TIMEDOUT', this.timeout))
+        }, this.timeout)
+      }
+
       const concentrate = (data: Buffer) => {
         buffer = Buffer.concat([ buffer, data ])
 
@@ -137,11 +133,15 @@ export class TimeAttendance {
         timeoutWatcherSetup()
 
         if (tcp.isValidHeader(data, this.requestId + 1)) {
-          const reply = data.readUInt16LE(8)
+          const header = tcp.decodeHeader(data)
 
-          switch (reply) {
+          switch (header.replyCode) {
             case ReplyCodes.CMD_ACK_OK:
               this.socket.removeListener('data', dataCallback)
+
+              if (timeoutWatcher) {
+                clearTimeout(timeoutWatcher)
+              }
 
               if (response.length <= 0) {
                 resolve(data)
@@ -163,7 +163,7 @@ export class TimeAttendance {
               reject(new SocketError('UNAUTHORIZED'))
 
             default:
-              reject(new SocketError('INVALID_REPLY_CODE', reply))
+              reject(new SocketError('INVALID_REPLY_CODE', header.replyCode))
               break
           }
 
@@ -187,16 +187,6 @@ export class TimeAttendance {
 
       this.socket.on('error', errorCallback)
 
-      const timeoutWatcherSetup = () => {
-        if (timeoutWatcher) {
-          clearTimeout(timeoutWatcher)
-        }
-
-        timeoutWatcher = setTimeout(() => {
-          reject(new SocketError('EXEC_TIMEDOUT'))
-        }, this.timeout)
-      }
-
       timeoutWatcherSetup()
 
       this.socket.write(header)
@@ -218,6 +208,10 @@ export class TimeAttendance {
         // but it do not make sense to has same value in 2 places...
         const size = data.readUInt32LE(17)
 
+        if (size !== data.readUInt32LE(21)) {
+          throw new SocketError('SIZE_MISMATCH', { '17': size, '21': data.readUInt32LE(21) })
+        }
+
         const requestParams = Buffer.alloc(8)
         requestParams.writeUInt32LE(0, 0)
         requestParams.writeUInt32LE(size, 4)
@@ -232,65 +226,49 @@ export class TimeAttendance {
   }
 
   async enable () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_CONNECT))
+    const data = await this.execute(CommandCodes.CMD_CONNECT)
 
-    const reply = data.readUInt16LE(0)
-
-    if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE', reply)
-    }
-
-    return true
+    return tcp.isOk(data)
   }
 
   async disable () : Promise<boolean> {
-    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_DISABLEDEVICE))
+    const data = await this.execute(CommandCodes.CMD_DISABLEDEVICE)
 
-    const reply = data.readUInt16LE(0)
-
-    if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE', reply)
-    }
-
-    return true
+    return tcp.isOk(data)
   }
 
   async capacities () : Promise<Object> {
-    const data = tcp.removeHeader(await this.execute(CommandCodes.CMD_GET_FREE_SIZES))
+    const data = await this.execute(CommandCodes.CMD_GET_FREE_SIZES)
 
-    const reply = data.readUInt16LE(0)
-
-    if (reply !== ReplyCodes.CMD_ACK_OK) {
-      throw new SocketError('INVALID_REPLY_CODE', reply)
-    }
+    tcp.isOk(data)
 
     const content = tcp.removeHeader(data)
 
     return {
       fingerprint: {
-        capacity: content.readUInt32LE(68),
+        capacity: content.readUInt32LE(60),
+        remaining: content.readUInt32LE(68),
+        used: content.readUInt32LE(24)
+      },
+      record: {
+        capacity: content.readUInt32LE(64),
         remaining: content.readUInt32LE(76),
         used: content.readUInt32LE(32)
       },
-      record: {
-        capacity: content.readUInt32LE(72),
-        remaining: content.readUInt32LE(84),
-        used: content.readUInt32LE(40)
-      },
       user: {
-        capacity: content.readUInt32LE(64),
-        remaining: content.readUInt32LE(80),
-        used: content.readUInt32LE(24),
-        admin: content.readUInt32LE(56),
-        password: content.readUInt32LE(60)
+        capacity: content.readUInt32LE(56),
+        remaining: content.readUInt32LE(72),
+        used: content.readUInt32LE(16),
+        admin: content.readUInt32LE(48),
+        password: content.readUInt32LE(52)
       },
-      unknown: content.readUInt32LE(48)
+      unknown: content.readUInt32LE(40)
     }
   }
 
   async users () : Promise<Array<User>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
-    const content = data.subarray(16)
+    const content = tcp.removeHeader(data)
 
     const contentSize = content.readUInt32LE(0)
     if (contentSize !== content.length - 4) {
@@ -318,7 +296,7 @@ export class TimeAttendance {
 
   async attendanceRecords () : Promise<Array<AttendanceRecord>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
-    const content = data.subarray(16)
+    const content = tcp.removeHeader(data)
 
     const contentSize = content.readUInt32LE(0)
 
