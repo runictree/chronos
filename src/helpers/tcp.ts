@@ -75,11 +75,8 @@ export function getMetadata (buffer: Buffer) : Metadata {
   }
 }
 
-export function isValidHeader (buffer: Buffer, replyId: number) : boolean {
-  const metadata = getMetadata(buffer)
-
-  return buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0 &&
-    metadata.replyId === replyId
+export function isValidHeader (buffer: Buffer) : boolean {
+  return buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0
 }
 
 export function isOk (data: Buffer) : boolean {

@@ -135,7 +135,6 @@ export class TimeAttendance {
           buffer = Buffer.from([])
 
           if (next.length > 0) {
-            console.log(next)
             dataCallback(next)
           }
         }
@@ -144,7 +143,7 @@ export class TimeAttendance {
       const dataCallback = (data: Buffer) => {
         timeoutWatcherSetup()
 
-        if (!tcp.isValidHeader(data, this.requestId + 1)) {
+        if (!tcp.isValidHeader(data)) {
           concentrate(data)
           return
         }

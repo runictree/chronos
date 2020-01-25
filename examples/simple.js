@@ -36,10 +36,10 @@ async function main () {
     console.log('first user', users[0])
     console.log('last user', users[users.length - 1])
 
-    // const att = await d.attendanceRecords()
-    // console.log('attendence records was retrieved')
-    // console.log('first record', att[0])
-    // console.log('last record', att[att.length - 1])
+    const att = await d.attendanceRecords()
+    console.log('attendence records was retrieved')
+    console.log('first record', att[0])
+    console.log('last record', att[att.length - 1])
 
     // const enable = await d.enable()
     // console.log('enable device', enable)
@@ -53,6 +53,7 @@ async function main () {
     console.log('ERROR CODE:    ', err.code)
     console.log('ERROR MESSAGE: ', err.message)
     console.log('ERROR PAYLOAD: ', err.params)
+    console.log(err)
 
     if (d.isConnected()) {
       d.disconnect()
