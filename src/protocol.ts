@@ -670,7 +670,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS2: 'AS1',
+  DP_AS2: 'AS2',
 
   /**
    * Automatic status changing times.
@@ -679,7 +679,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS3: 'AS1',
+  DP_AS3: 'AS3',
 
   /**
    * Automatic status changing times.
@@ -688,7 +688,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS4: 'AS1',
+  DP_AS4: 'AS4',
 
   /**
    * Automatic status changing times.
@@ -697,7 +697,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS5: 'AS1',
+  DP_AS5: 'AS5',
 
   /**
    * Automatic status changing times.
@@ -706,7 +706,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS6: 'AS1',
+  DP_AS6: 'AS6',
 
   /**
    * Automatic status changing times.
@@ -715,7 +715,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS7: 'AS1',
+  DP_AS7: 'AS7',
 
   /**
    * Automatic status changing times.
@@ -724,7 +724,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS8: 'AS1',
+  DP_AS8: 'AS8',
 
   /**
    * Automatic status changing times.
@@ -733,7 +733,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS9: 'AS1',
+  DP_AS9: 'AS9',
 
   /**
    * Automatic status changing times.
@@ -742,7 +742,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS10: 'AS1',
+  DP_AS10: 'AS10',
 
   /**
    * Automatic status changing times.
@@ -751,7 +751,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS11: 'AS1',
+  DP_AS11: 'AS11',
 
   /**
    * Automatic status changing times.
@@ -760,7 +760,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS12: 'AS1',
+  DP_AS12: 'AS12',
 
   /**
    * Automatic status changing times.
@@ -769,7 +769,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS13: 'AS1',
+  DP_AS13: 'AS13',
 
   /**
    * Automatic status changing times.
@@ -778,7 +778,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS14: 'AS1',
+  DP_AS14: 'AS14',
 
   /**
    * Automatic status changing times.
@@ -787,7 +787,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS15: 'AS1',
+  DP_AS15: 'AS15',
 
   /**
    * Automatic status changing times.
@@ -796,7 +796,7 @@ export const DeviceCodes = Object.freeze({
    *
    * Mode: ?
    */
-  DP_AS16: 'AS1',
+  DP_AS16: 'AS16',
 
   /**
    * Wiegand failure ID.

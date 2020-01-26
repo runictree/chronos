@@ -1,4 +1,6 @@
 import { MAX_USHORT } from './constants'
+import { SocketError } from '../SocketError'
+import { ReplyCodes } from '../protocol'
 import * as utils from './utilities'
 
 interface Header {
@@ -45,7 +47,7 @@ export function createHeader (command: number, sessionId: number, requestId: num
 }
 
 export function removeHeader (buffer: Buffer) : Buffer {
-  if (buffer.length < 8) {
+  if (buffer.length < 16) {
     return buffer
   }
 
@@ -53,7 +55,7 @@ export function removeHeader (buffer: Buffer) : Buffer {
     return buffer
   }
 
-  return buffer.slice(8)
+  return buffer.subarray(16)
 }
 
 export function decodeHeader (buffer: Buffer) : Header {
@@ -71,4 +73,14 @@ export function isValidHeader (buffer: Buffer, replyId: number) : boolean {
 
   return buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0 &&
     header.replyId === replyId
+}
+
+export function isOk (data: Buffer) : boolean {
+  const replyCode = data.readUInt16LE(8)
+
+  if (replyCode !== ReplyCodes.CMD_ACK_OK) {
+    throw new SocketError('INVALID_REPLY_CODE', replyCode)
+  }
+
+  return true
 }
