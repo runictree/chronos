@@ -3,7 +3,10 @@ import { SocketError } from '../SocketError'
 import { ReplyCodes } from '../protocol'
 import * as utils from './utilities'
 
-interface Header {
+export const METADATA_SIZE = 8
+export const HEADER_SIZE = 16
+
+interface Metadata {
   /** Reply code */
   replyCode: number,
 
@@ -13,8 +16,11 @@ interface Header {
   /** Reply ID */
   replyId: number,
 
-  /** Package size */
+  /** Content size + meta data size */
   size: number,
+
+  /** Content size */
+  contentSize: number,
 
   /** Checksum */
   checksum: number
@@ -46,7 +52,7 @@ export function createHeader (command: number, sessionId: number, requestId: num
   return Buffer.concat([prefix, buffer])
 }
 
-export function removeHeader (buffer: Buffer) : Buffer {
+export function getContent (buffer: Buffer) : Buffer {
   if (buffer.length < 16) {
     return buffer
   }
@@ -58,21 +64,19 @@ export function removeHeader (buffer: Buffer) : Buffer {
   return buffer.subarray(16)
 }
 
-export function decodeHeader (buffer: Buffer) : Header {
+export function getMetadata (buffer: Buffer) : Metadata {
   return {
     replyCode: buffer.readUInt16LE(8),
     sessionId: buffer.readUInt16LE(12),
     replyId: buffer.readUInt16LE(14),
     size: buffer.readUInt16LE(4),
+    contentSize: buffer.readUInt16LE(4) - METADATA_SIZE,
     checksum: buffer.readUInt16LE(10)
   }
 }
 
-export function isValidHeader (buffer: Buffer, replyId: number) : boolean {
-  const header = decodeHeader(buffer)
-
-  return buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0 &&
-    header.replyId === replyId
+export function isValidHeader (buffer: Buffer) : boolean {
+  return buffer.length >= 16 && buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0
 }
 
 export function isOk (data: Buffer) : boolean {

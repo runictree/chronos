@@ -1,290 +1,290 @@
 // Doc: https://github.com/adrobinoga/zk-protocol/blob/master/protocol.md
 
 export const CommandCodes = Object.freeze({
-  /** Begin connection. */
+  /** Begin connection. 0x03E8 */
   CMD_CONNECT: 1000,
 
-  /** Disconnect. */
+  /** Disconnect. 0x03E9 */
   CMD_EXIT: 1001,
 
-  /** Change machine state to "normal work". */
+  /** Change machine state to "normal work". 0x03EA */
   CMD_ENABLEDEVICE: 1002,
 
-  /** Disables fingerprint, rfid reader and keyboard. */
+  /** Disables fingerprint, rfid reader and keyboard. 0x03EB */
   CMD_DISABLEDEVICE: 1003,
 
-  /** Restart machine. */
+  /** Restart machine. 0x03EC */
   CMD_RESTART: 1004,
 
-  /** Shut-down machine. */
+  /** Shut-down machine. 0x03ED */
   CMD_POWEROFF: 1005,
 
-  /** Change machine state to "idle". */
+  /** Change machine state to "idle". 0x03EE */
   CMD_SLEEP: 1006,
 
-  /** Change machine state to "awaken". */
+  /** Change machine state to "awaken". 0x03EF */
   CMD_RESUME: 1007,
 
-  /** Capture fingerprint picture. */
+  /** Capture fingerprint picture. 0x03F1 */
   CMD_CAPTUREFINGER: 1009,
 
-  /** Test if fingerprint exists. */
+  /** Test if fingerprint exists. 0x03F3 */
   CMD_TEST_TEMP: 1011,
 
-  /** Capture the entire image. */
+  /** Capture the entire image. 0x03F4 */
   CMD_CAPTUREIMAGE: 1012,
 
-  /** Refresh the machine stored data. */
+  /** Refresh the machine stored data. 0x03F5 */
   CMD_REFRESHDATA: 1013,
 
-  /** Refresh the configuration parameters. */
+  /** Refresh the configuration parameters. 0x03F6 */
   CMD_REFRESHOPTION: 1014,
 
-  /** Test voice. */
+  /** Test voice. 0x03F9 */
   CMD_TESTVOICE: 1017,
 
-  /** Request the firmware edition. */
+  /** Request the firmware edition. 0x044C */
   CMD_GET_VERSION: 1100,
 
-  /** Change transmission speed. */
+  /** Change transmission speed. 0x044D */
   CMD_CHANGE_SPEED: 1101,
 
-  /** Request to begin session using commkey. */
+  /** Request to begin session using commkey. 0x044E */
   CMD_AUTH: 1102,
 
-  /** Prepare for data transmission. */
+  /** Prepare for data transmission. 0x05DC */
   CMD_PREPARE_DATA: 1500,
 
-  /** Data packet. */
+  /** Data packet. 0x05DD */
   CMD_DATA: 1501,
 
-  /** Release buffer used for data transmission. */
+  /** Release buffer used for data transmission. 0x05DE */
   CMD_FREE_DATA: 1502,
 
-  /** Read/Write a large data set. */
+  /** Read/Write a large data set. 0x05DF */
   CMD_DATA_WRRQ: 1503,
 
-  /** Indicates that it is ready to receive data. */
+  /** Indicates that it is ready to receive data. 0x05E0 */
   CMD_DATA_RDY: 1504,
 
-  /** Read saved data. */
+  /** Read saved data. 0x0007 */
   CMD_DB_RRQ: 7,
 
-  /** Upload user data. */
+  /** Upload user data. 0x0008 */
   CMD_USER_WRQ: 8,
 
-  /** Read user fingerprint template. */
+  /** Read user fingerprint template. 0x0009 */
   CMD_USERTEMP_RRQ: 9,
 
-  /** Upload user fingerprint template. */
+  /** Upload user fingerprint template. 0x000A */
   CMD_USERTEMP_WRQ: 10,
 
-  /** Read configuration value of the machine. */
+  /** Read configuration value of the machine. 0x000B */
   CMD_OPTIONS_RRQ: 11,
 
-  /** Change configuration value of the machine. */
+  /** Change configuration value of the machine. 0x000C */
   CMD_OPTIONS_WRQ: 12,
 
-  /** Request attendance log. */
+  /** Request attendance log. 0x000D */
   CMD_ATTLOG_RRQ: 13,
 
-  /** Delete data. */
+  /** Delete data. 0x000E */
   CMD_CLEAR_DATA: 14,
 
-  /** Delete attendance record. */
+  /** Delete attendance record. 0x000F */
   CMD_CLEAR_ATTLOG: 15,
 
-  /** Delete user. */
+  /** Delete user. 0x0012 */
   CMD_DELETE_USER: 18,
 
-  /** Delete user fingerprint template. */
+  /** Delete user fingerprint template. 0x0013 */
   CMD_DELETE_USERTEMP: 19,
 
-  /** Clears admins privileges. */
+  /** Clears admins privileges. 0x0014 */
   CMD_CLEAR_ADMIN: 20,
 
-  /** Read user group. */
+  /** Read user group. 0x0015 */
   CMD_USERGRP_RRQ: 21,
 
-  /** Set user group. */
+  /** Set user group. 0x0016 */
   CMD_USERGRP_WRQ: 22,
 
-  /** Get user timezones. */
+  /** Get user timezones. 0x0017 */
   CMD_USERTZ_RRQ: 23,
 
-  /** Set the user timezones. */
+  /** Set the user timezones. 0x0018 */
   CMD_USERTZ_WRQ: 24,
 
-  /** Get group timezone. */
+  /** Get group timezone. 0x0019 */
   CMD_GRPTZ_RRQ: 25,
 
-  /** Set group timezone. */
+  /** Set group timezone. 0x001A */
   CMD_GRPTZ_WRQ: 26,
 
-  /** Get device timezones. */
+  /** Get device timezones. 0x001B */
   CMD_TZ_RRQ: 27,
 
-  /** Set device timezones. */
+  /** Set device timezones. 0x001C */
   CMD_TZ_WRQ: 28,
 
-  /** Get group combination to unlock. */
+  /** Get group combination to unlock. 0x001D */
   CMD_ULG_RRQ: 29,
 
-  /** Set group combination to unlock. */
+  /** Set group combination to unlock. 0x001E */
   CMD_ULG_WRQ: 30,
 
-  /** Unlock door for a specified amount of time. */
+  /** Unlock door for a specified amount of time. 0x001F */
   CMD_UNLOCK: 31,
 
-  /** Restore access control to default. */
+  /** Restore access control to default. 0x0020 */
   CMD_CLEAR_ACC: 32,
 
-  /** Delete operations log. */
+  /** Delete operations log. 0x0021 */
   CMD_CLEAR_OPLOG: 33,
 
-  /** Read operations log. */
+  /** Read operations log. 0x0022 */
   CMD_OPLOG_RRQ: 34,
 
-  /** Request machine status (remaining space). */
+  /** Request machine status (remaining space). x0032 */
   CMD_GET_FREE_SIZES: 50,
 
-  /** Enables the ":" in screen clock. */
+  /** Enables the ":" in screen clock. 0x0039 */
   CMD_ENABLE_CLOCK: 57,
 
-  /** Set the machine to authentication state. */
+  /** Set the machine to authentication state. 0x003C */
   CMD_STARTVERIFY: 60,
 
-  /** Start enroll procedure. */
+  /** Start enroll procedure. 0x003D */
   CMD_STARTENROLL: 61,
 
-  /** Disable normal authentication of users. */
+  /** Disable normal authentication of users. 0x003E */
   CMD_CANCELCAPTURE: 62,
 
-  /** Query state. */
+  /** Query state. 0x0040 */
   CMD_STATE_RRQ: 64,
 
-  /** Prints chars to the device screen. */
+  /** Prints chars to the device screen. 0x0042 */
   CMD_WRITE_LCD: 66,
 
-  /** Clear screen captions. */
+  /** Clear screen captions. 0x0043 */
   CMD_CLEAR_LCD: 67,
 
-  /** Request max size for users id. */
+  /** Request max size for users id. 0x0045 */
   CMD_GET_PINWIDTH: 69,
 
-  /** Upload short message. */
+  /** Upload short message. 0x0046 */
   CMD_SMS_WRQ: 70,
 
-  /** Download short message. */
+  /** Download short message. 0x0047 */
   CMD_SMS_RRQ: 71,
 
-  /** Delete short message. */
+  /** Delete short message. 0x0048 */
   CMD_DELETE_SMS: 72,
 
-  /** Set user short message. */
+  /** Set user short message. 0x0049 */
   CMD_UDATA_WRQ: 73,
 
-  /** Delete user short message. */
+  /** Delete user short message. 0x004A */
   CMD_DELETE_UDATA: 74,
 
-  /** Get door state. */
+  /** Get door state. 0x004B */
   CMD_DOORSTATE_RRQ: 75,
 
-  /** Write data to Mifare card. */
+  /** Write data to Mifare card. 0x004C */
   CMD_WRITE_MIFARE: 76,
 
-  /** Clear Mifare card. */
+  /** Clear Mifare card. 0x004E */
   CMD_EMPTY_MIFARE: 78,
 
-  /** Change verification style of a given user. */
+  /** Change verification style of a given user. 0x004F */
   CMD_VERIFY_WRQ: 79,
 
-  /** Read verification style of a given user. */
+  /** Read verification style of a given user. 0x0050 */
   CMD_VERIFY_RRQ: 80,
 
-  /** Transfer fp template from buffer. */
+  /** Transfer fp template from buffer. 0x0057 */
   CMD_TMP_WRITE: 87,
 
-  /** Get checksum of machine's buffer. */
+  /** Get checksum of machine's buffer. 0x0077 */
   CMD_CHECKSUM_BUFFER: 119,
 
-  /** Deletes fingerprint template. */
+  /** Deletes fingerprint template. 0x0086 */
   CMD_DEL_FPTMP: 134,
 
-  /** Request machine time. */
+  /** Request machine time. 0x00C9 */
   CMD_GET_TIME: 201,
 
-  /** Set machine time. */
+  /** Set machine time. 0x00CA */
   CMD_SET_TIME: 202,
 
-  /** Realtime events. */
+  /** Realtime events. 0x01F4 */
   CMD_REG_EVENT: 500
 })
 
 export const ReplyCodes = Object.freeze({
-  /** Requested data was prepared, ready to sent back */
+  /** Requested data was prepared, ready to sent back 0x05DC */
   CMD_PREPARE_DATA: 1500,
 
-  /** Start sending data, after prepared */
+  /** Start sending data, after prepared 0x05DD */
   CMD_DATA: 1501,
 
-  /** The request was processed sucessfully. */
+  /** The request was processed sucessfully. 0x07D0 */
   CMD_ACK_OK: 2000,
 
-  /** There was an error when processing the request. */
+  /** There was an error when processing the request. 0x07D1 */
   CMD_ACK_ERROR: 2001,
 
-  /**  */
+  /**  0x07D2 */
   CMD_ACK_DATA: 2002,
 
-  /**  */
+  /**  0x07D3 */
   CMD_ACK_RETRY: 2003,
 
-  /**  */
+  /**  0x07D4 */
   CMD_ACK_REPEAT: 2004,
 
-  /** Connection not authorized. */
+  /** Connection not authorized. 0x07D5 */
   CMD_ACK_UNAUTH: 2005,
 
-  /** Received unknown command. */
+  /** Received unknown command. 0xFFFF */
   CMD_ACK_UNKNOWN: 65535,
 
-  /**  */
+  /**  0xFFFD */
   CMD_ACK_ERROR_CMD: 65533,
 
-  /**  */
+  /**  0xFFFC */
   CMD_ACK_ERROR_INIT: 65532,
 
-  /**  */
+  /**  0xFFFB */
   CMD_ACK_ERROR_DATA: 65531,
 })
 
 export const EventCodes = Object.freeze({
-  /** Attendance entry. */
+  /** Attendance entry. 0x0001 */
   EF_ATTLOG: 1,
 
-  /** Pressed finger. */
+  /** Pressed finger. 0x0002 */
   EF_FINGER: 2,
 
-  /** Enrolled user. */
+  /** Enrolled user. 0x0004 */
   EF_ENROLLUSER: 4,
 
-  /** Enrolled fingerprint. */
+  /** Enrolled fingerprint. 0x0008 */
   EF_ENROLLFINGER: 8,
 
-  /** Pressed keyboard key. */
+  /** Pressed keyboard key. 0x0010 */
   EF_BUTTON: 16,
 
-  /**  */
+  /**  0x0020 */
   EF_UNLOCK: 32,
 
-  /** Registered user placed finger. */
+  /** Registered user placed finger. 0x0080 */
   EF_VERIFY: 128,
 
-  /** Fingerprint score in enroll procedure. */
+  /** Fingerprint score in enroll procedure. 0x0100 */
   EF_FPFTR: 256,
 
-  /** Triggered alarm. */
+  /** Triggered alarm. 0x0200 */
   EF_ALARM: 512
 })
 

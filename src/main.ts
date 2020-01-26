@@ -27,13 +27,14 @@ export class TimeAttendance {
   connect () : Promise<boolean> {
     return new Promise((resolve, reject) => {
       const errorCallback = (error: NodeJS.ErrnoException) => {
-        this.socket.removeListener('error', errorCallback)
+        this.socket.removeAllListeners()
         reject(new SocketError(error.code || error.message))
       }
 
       this.socket.on('error', errorCallback)
 
       this.socket.once('connect', () => {
+        this.socket.removeAllListeners()
         resolve(true)
       })
 
@@ -48,15 +49,15 @@ export class TimeAttendance {
   disconnect () : Promise<boolean> {
     return new Promise((resolve, reject) => {
       const errorCallback = (error: NodeJS.ErrnoException) => {
-        this.socket.removeListener('error', errorCallback)
+        this.socket.removeAllListeners()
         reject(new SocketError(error.code || error.message))
       }
 
       if (this.isConnected()) {
         this.socket.on('error', errorCallback)
 
-        this.socket.removeAllListeners()
         this.socket.end(() => {
+          this.socket.removeAllListeners()
           resolve(true)
         })
       } else {
@@ -70,9 +71,9 @@ export class TimeAttendance {
 
     tcp.isOk(data)
 
-    const header = tcp.decodeHeader(data)
+    const metadata = tcp.getMetadata(data)
 
-    this.sessionId = header.sessionId
+    this.sessionId = metadata.sessionId
 
     if (!this.sessionId) {
       throw new SocketError('NO_SESSION')
@@ -104,8 +105,9 @@ export class TimeAttendance {
 
       const header = tcp.createHeader(command, this.sessionId, this.requestId, params)
 
-      let response = Buffer.from([])
+      const payload : Buffer[] = []
       let buffer = Buffer.from([])
+      let payloadSize = 0
       let timeoutWatcher : NodeJS.Timeout | undefined = undefined
 
       const timeoutWatcherSetup = () => {
@@ -114,69 +116,86 @@ export class TimeAttendance {
         }
 
         timeoutWatcher = setTimeout(() => {
+          this.socket.removeAllListeners()
           reject(new SocketError('EXEC_TIMEDOUT', this.timeout))
         }, this.timeout)
       }
 
       const concentrate = (data: Buffer) => {
-        buffer = Buffer.concat([ buffer, data ])
+        if (tcp.isValidHeader(data)) {
+          if (buffer.length <= 0) {
+            buffer = data
+          } else {
+            buffer = Buffer.concat([ buffer, tcp.getContent(data) ])
+          }
+        } else {
+          buffer = Buffer.concat([ buffer, data ])
+        }
 
-        const size = buffer.readUInt16LE(4)
+        const packageSize = payloadSize + tcp.HEADER_SIZE
 
-        if (buffer.length >= 8 + size) {
-          response = Buffer.concat([ response, buffer.subarray(16, 8 + size) ])
-          buffer = buffer.subarray(8 + size)
+        if (buffer.length >= packageSize) {
+          payload.push(buffer.subarray(0, packageSize))
+
+          const next = buffer.subarray(packageSize)
+          buffer = Buffer.from([])
+
+          dataCallback(next)
         }
       }
 
       const dataCallback = (data: Buffer) => {
         timeoutWatcherSetup()
 
-        if (tcp.isValidHeader(data, this.requestId + 1)) {
-          const header = tcp.decodeHeader(data)
-
-          switch (header.replyCode) {
-            case ReplyCodes.CMD_ACK_OK:
-              this.socket.removeListener('data', dataCallback)
-
-              if (timeoutWatcher) {
-                clearTimeout(timeoutWatcher)
-              }
-
-              if (response.length <= 0) {
-                resolve(data)
-              } else {
-                resolve(Buffer.concat([ data, response ]))
-              }
-
-              break
-
-            case ReplyCodes.CMD_PREPARE_DATA:
-              // prepare reply code, initalize some variables before retrieve data
-              break
-
-            case ReplyCodes.CMD_DATA:
-              concentrate(data)
-              break
-
-            case ReplyCodes.CMD_ACK_UNAUTH:
-              reject(new SocketError('UNAUTHORIZED'))
-
-            default:
-              reject(new SocketError('INVALID_REPLY_CODE', header.replyCode))
-              break
-          }
-
+        if (!tcp.isValidHeader(data)) {
+          concentrate(data)
           return
         }
 
-        concentrate(data)
+        const metadata = tcp.getMetadata(data)
+
+        switch (metadata.replyCode) {
+          case ReplyCodes.CMD_ACK_OK:
+            this.socket.removeAllListeners()
+
+            if (timeoutWatcher) {
+              clearTimeout(timeoutWatcher)
+            }
+
+            if (payload.length <= 0) {
+              resolve(data)
+            } else {
+              resolve(Buffer.concat(payload))
+            }
+
+            break
+
+          case ReplyCodes.CMD_PREPARE_DATA:
+            // prepare reply code, initalize some variables before retrieve data
+            payloadSize = data.readUInt32LE(16)
+
+            break
+
+          case ReplyCodes.CMD_DATA:
+            concentrate(data)
+
+            break
+
+          case ReplyCodes.CMD_ACK_UNAUTH:
+            this.socket.removeAllListeners()
+            reject(new SocketError('UNAUTHORIZED'))
+
+          default:
+            this.socket.removeAllListeners()
+            reject(new SocketError('INVALID_REPLY_CODE', metadata.replyCode))
+            break
+        }
       }
 
       this.socket.on('data', dataCallback)
 
       const errorCallback = (error: NodeJS.ErrnoException) => {
-        this.socket.removeListener('error', errorCallback)
+        this.socket.removeAllListeners()
 
         if (timeoutWatcher) {
           clearTimeout(timeoutWatcher)
@@ -195,24 +214,26 @@ export class TimeAttendance {
 
   async run (command : number, params? : Buffer) : Promise<Buffer> {
     const data = await this.execute(command, params)
-    const header = tcp.decodeHeader(data)
 
-    switch (header.replyCode) {
+    const metadata = tcp.getMetadata(data)
+
+    switch (metadata.replyCode) {
       case ReplyCodes.CMD_ACK_DATA:
         // small size data, device will return immediately and ready to use
         return data
 
       case ReplyCodes.CMD_ACK_OK:
         // large size data, only header is returned
-        // size can get from data.readUInt32LE(16+1) and data.readUInt32LE(16+5)
+        // size can get from data.readUInt32LE(HEADER_SIZE+1) and data.readUInt32LE(HEADER_SIZE+5)
         // but it do not make sense to has same value in 2 places...
-        const size = data.readUInt32LE(17)
+        const size = data.readUInt32LE(tcp.HEADER_SIZE + 1)
 
-        if (size !== data.readUInt32LE(21)) {
-          throw new SocketError('SIZE_MISMATCH', { '17': size, '21': data.readUInt32LE(21) })
+        if (size !== data.readUInt32LE(tcp.HEADER_SIZE + 5)) {
+          // so this should not happen
+          throw new SocketError('SIZE_MISMATCH', { 'h+1': size, 'h+5': data.readUInt32LE(tcp.HEADER_SIZE + 5) })
         }
 
-        const requestParams = Buffer.alloc(8)
+        const requestParams = Buffer.alloc(tcp.METADATA_SIZE)
         requestParams.writeUInt32LE(0, 0)
         requestParams.writeUInt32LE(size, 4)
 
@@ -221,7 +242,7 @@ export class TimeAttendance {
         return resp
 
       default:
-        throw new SocketError('INVALID_REPLY_CODE', header.replyCode)
+        throw new SocketError('INVALID_REPLY_CODE', metadata.replyCode)
     }
   }
 
@@ -242,7 +263,7 @@ export class TimeAttendance {
 
     tcp.isOk(data)
 
-    const content = tcp.removeHeader(data)
+    const content = tcp.getContent(data)
 
     return {
       fingerprint: {
@@ -271,7 +292,7 @@ export class TimeAttendance {
 
     tcp.isOk(data)
 
-    return tcp.removeHeader(data).toString()
+    return tcp.getContent(data).toString()
   }
 
   async getTime () : Promise<Date> {
@@ -279,16 +300,16 @@ export class TimeAttendance {
 
     tcp.isOk(data)
 
-    return utils.timeToDate(tcp.removeHeader(data).readUInt32LE(0))
+    return utils.timeToDate(tcp.getContent(data).readUInt32LE(0))
   }
 
   async users () : Promise<Array<User>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
-    const content = tcp.removeHeader(data)
-
+    const content = tcp.getContent(data)
     const contentSize = content.readUInt32LE(0)
+
     if (contentSize !== content.length - 4) {
-      throw new SocketError('UNMATCH_CONTENT_SIZE')
+      throw new SocketError('UNMATCH_CONTENT_SIZE', { contentSize, contentLength: content.length - 4 })
     }
 
     const users : Array<User> = []
@@ -312,12 +333,11 @@ export class TimeAttendance {
 
   async attendanceRecords () : Promise<Array<AttendanceRecord>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
-    const content = tcp.removeHeader(data)
-
+    const content = tcp.getContent(data)
     const contentSize = content.readUInt32LE(0)
 
     if (contentSize !== content.length - 4) {
-      throw new SocketError('UNMATCH_CONTENT_SIZE')
+      throw new SocketError('UNMATCH_CONTENT_SIZE', { contentSize, contentLength: content.length - 4 })
     }
 
     const records : Array<AttendanceRecord> = []
