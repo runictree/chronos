@@ -76,7 +76,7 @@ export function getMetadata (buffer: Buffer) : Metadata {
 }
 
 export function isValidHeader (buffer: Buffer) : boolean {
-  return buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0
+  return buffer.length >= 16 && buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0
 }
 
 export function isOk (data: Buffer) : boolean {

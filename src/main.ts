@@ -1,3 +1,4 @@
+import fs from 'fs'
 import { Socket } from 'net'
 import { SocketError } from './SocketError'
 import * as tcp from './helpers/tcp'
@@ -107,6 +108,7 @@ export class TimeAttendance {
 
       const payload : Buffer[] = []
       let buffer = Buffer.from([])
+      let payloadSize = 0
       let timeoutWatcher : NodeJS.Timeout | undefined = undefined
 
       const timeoutWatcherSetup = () => {
@@ -121,22 +123,25 @@ export class TimeAttendance {
       }
 
       const concentrate = (data: Buffer) => {
-        buffer = Buffer.concat([ buffer, data ])
+        if (tcp.isValidHeader(data)) {
+          if (buffer.length <= 0) {
+            buffer = data
+          } else {
+            buffer = Buffer.concat([ buffer, tcp.getContent(data) ])
+          }
+        } else {
+          buffer = Buffer.concat([ buffer, data ])
+        }
 
-        const metadata = tcp.getMetadata(buffer)
-        const size = metadata.contentSize + tcp.HEADER_SIZE
+        const packageSize = payloadSize + tcp.HEADER_SIZE
 
-        if (buffer.length >= size) {
-          const current = buffer.subarray(0, size)
+        if (buffer.length >= packageSize) {
+          payload.push(buffer.subarray(0, packageSize))
 
-          payload.push(tcp.getContent(current))
-
-          const next = buffer.subarray(size)
+          const next = buffer.subarray(packageSize)
           buffer = Buffer.from([])
 
-          if (next.length > 0) {
-            dataCallback(next)
-          }
+          dataCallback(next)
         }
       }
 
@@ -161,23 +166,20 @@ export class TimeAttendance {
             if (payload.length <= 0) {
               resolve(data)
             } else {
-              resolve(Buffer.concat([ data, ...payload ]))
+              resolve(Buffer.concat(payload))
             }
 
             break
 
           case ReplyCodes.CMD_PREPARE_DATA:
             // prepare reply code, initalize some variables before retrieve data
+            payloadSize = data.readUInt32LE(16)
+
             break
 
           case ReplyCodes.CMD_DATA:
-            const used = data.subarray(0, metadata.contentSize + tcp.HEADER_SIZE)
-            concentrate(used)
-            const left = data.subarray(metadata.contentSize + tcp.HEADER_SIZE)
+            concentrate(data)
 
-            if (left.length > 0) {
-              dataCallback(left)
-            }
             break
 
           case ReplyCodes.CMD_ACK_UNAUTH:
