@@ -1,4 +1,3 @@
-import fs from 'fs'
 import { Socket } from 'net'
 import { SocketError } from './SocketError'
 import * as tcp from './helpers/tcp'
