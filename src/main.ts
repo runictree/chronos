@@ -405,8 +405,16 @@ export class TimeAttendance {
     return tcp.isOk(data)
   }
 
-  async testvoice () : Promise<boolean> {
+  async testVoice () : Promise<boolean> {
     const data = await this.execute(CommandCodes.CMD_TESTVOICE)
+
+    return tcp.isOk(data)
+  }
+
+  async isFingerScannerExist () : Promise<boolean> {
+    const data = await this.execute(CommandCodes.CMD_TEST_TEMP)
+
+    console.log(data)
 
     return tcp.isOk(data)
   }

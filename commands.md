@@ -19,11 +19,11 @@ The command id correspondence is given in the following table:
 |CMD_SLEEP		|Change machine state to "idle".			|1006		|03ee		|sleep() |
 |CMD_RESUME		|Change machine state to "awaken".			|1007		|03ef		|resume() |
 |CMD_CAPTUREFINGER	|Capture fingerprint picture.				|1009		|03f1		|
-|CMD_TEST_TEMP		|Test if fingerprint exists.				|1011		|03f3		|
+|CMD_TEST_TEMP		|Test if fingerprint exists.				|1011		|03f3		|isFingerScannerExist() |
 |CMD_CAPTUREIMAGE	|Capture the entire image.				|1012		|03f4		|
 |CMD_REFRESHDATA	|Refresh the machine stored data.			|1013		|03f5		|
 |CMD_REFRESHOPTION	|Refresh the configuration parameters.			|1014		|03f6		|
-|CMD_TESTVOICE		|Test voice.						|1017		|03f9		|
+|CMD_TESTVOICE		|Test voice.						|1017		|03f9		|testVoice() |
 |CMD_GET_VERSION	|Request the firmware edition.				|1100		|044c		|firmwareVersion() |
 |CMD_CHANGE_SPEED	|Change transmission speed.				|1101		|044d		|
 |CMD_AUTH		|Request to begin session using commkey.		|1102		|044e		|
