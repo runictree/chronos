@@ -89,7 +89,7 @@ export class TimeAttendance {
   }
 
   async close () : Promise<boolean> {
-    const data = await this.execute(CommandCodes.CMD_CONNECT)
+    const data = await this.execute(CommandCodes.CMD_EXIT)
 
     return tcp.isOk(data)
   }
@@ -303,7 +303,7 @@ export class TimeAttendance {
     return utils.timeToDate(tcp.getContent(data).readUInt32LE(0))
   }
 
-  async users () : Promise<Array<User>> {
+  async getUsers () : Promise<Array<User>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
     const content = tcp.getContent(data)
     const contentSize = content.readUInt32LE(0)
@@ -331,7 +331,7 @@ export class TimeAttendance {
     return users
   }
 
-  async attendanceRecords () : Promise<Array<AttendanceRecord>> {
+  async getAttendanceRecords () : Promise<Array<AttendanceRecord>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
     const content = tcp.getContent(data)
     const contentSize = content.readUInt32LE(0)
