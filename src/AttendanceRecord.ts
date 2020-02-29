@@ -2,7 +2,7 @@ export interface AttendanceRecord {
   id: number,
   userId?: string,
   verifyMethod: number,
-  timestamp: Date,
+  timestamp: string,
   verifyState: number
 }
 
