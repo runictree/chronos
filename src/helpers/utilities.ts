@@ -2,15 +2,31 @@ import { MAX_USHORT } from './constants'
 import { User } from '../User'
 import { AttendanceRecord } from '../AttendanceRecord'
 
-export function timeToDate (time: number) : Date {
-  const second = time % 60
-  const minute = (time / 60) % 60
-  const hour = (time / 60 * 60) % 24
-  const day = ((time / (60 * 60 * 24)) % 31) + 1
-  const month = ((time / (60 * 60 * 24 * 31)) % 12)
-  const year = (time / (60 * 60 * 24 * 31 * 12)) + 2000
+export function timeToDate (time: number) : string {
+  const second = addZero(time % 60)
+  const minute = addZero((time / 60) % 60)
+  const hour = addZero((time / 60 * 60) % 24)
+  const date = addZero(((time / (60 * 60 * 24)) % 31) + 1)
+  const month = addZero(((time / (60 * 60 * 24 * 31)) % 12) + 1)
 
-  return new Date(year, month, day, hour, minute, second)
+  const year = getYear(time)
+
+  return `${year}-${month}-${date} ${hour}:${minute}:${second}`
+}
+
+function getYear(time: number) : number {
+  time = (time - (time % 60)) / 60
+  time = (time - (time % 60)) / 60
+  time = (time - (time % 24)) / 24
+  time = (time - (time % 31)) / 31
+  time = (time - (time % 12)) / 12
+  return Math.floor(time + 2000)
+}
+
+function addZero(num: number) : string {
+  num = Math.floor(num)
+
+  return `${num < 10 && num >= 0 ? '0' + num : num}`
 }
 
 export function hexToDate () : Date {

@@ -145,7 +145,9 @@ export class TimeAttendance {
           const next = buffer.subarray(packageSize)
           buffer = Buffer.from([])
 
-          dataCallback(next)
+          if (next.length > 0) {
+            dataCallback(next)
+          }
         }
       }
 
@@ -313,7 +315,7 @@ export class TimeAttendance {
     return tcp.getContent(data).toString()
   }
 
-  async getTime () : Promise<Date> {
+  async getTime () : Promise<string> {
     const data = await this.execute(CommandCodes.CMD_GET_TIME)
 
     tcp.isOk(data)
