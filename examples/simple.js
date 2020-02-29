@@ -31,12 +31,12 @@ async function main () {
     const time = await d.getTime()
     console.log('time', time)
 
-    const users = await d.users()
+    const users = await d.getUsers()
     console.log('user information was received')
     console.log('first user', users[0])
     console.log('last user', users[users.length - 1])
 
-    const att = await d.attendanceRecords()
+    const att = await d.getAttendanceRecords()
     console.log('attendence records was retrieved')
     console.log('first record', att[0])
     console.log('last record', att[att.length - 1])
@@ -56,7 +56,7 @@ async function main () {
     console.log(err)
 
     if (d.isConnected()) {
-      d.disconnect()
+      await d.disconnect()
     }
   }
 }

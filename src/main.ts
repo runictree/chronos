@@ -89,9 +89,14 @@ export class TimeAttendance {
   }
 
   async close () : Promise<boolean> {
-    const data = await this.execute(CommandCodes.CMD_CONNECT)
+    const data = await this.execute(CommandCodes.CMD_EXIT)
 
     return tcp.isOk(data)
+  }
+
+  put (command: number, params? : Buffer) {
+    const header = tcp.createHeader(command, this.sessionId, this.requestId, params)
+    this.socket.write(header)
   }
 
   execute (command : number, params? : Buffer) : Promise<Buffer> {
@@ -154,6 +159,8 @@ export class TimeAttendance {
 
         const metadata = tcp.getMetadata(data)
 
+        let error : SocketError | null = null
+
         switch (metadata.replyCode) {
           case ReplyCodes.CMD_ACK_OK:
             this.socket.removeAllListeners()
@@ -178,17 +185,28 @@ export class TimeAttendance {
 
           case ReplyCodes.CMD_DATA:
             concentrate(data)
-
             break
 
           case ReplyCodes.CMD_ACK_UNAUTH:
-            this.socket.removeAllListeners()
-            reject(new SocketError('UNAUTHORIZED'))
+            error = new SocketError('UNAUTHORIZED')
+            break
+
+          case ReplyCodes.CMD_ACK_UNKNOWN:
+            error = new SocketError('UNKNOWN_COMMAND')
+            break
+
+          case ReplyCodes.CMD_ACK_ERROR:
+            error = new SocketError('PROCESSING_ERROR')
+            break
 
           default:
-            this.socket.removeAllListeners()
-            reject(new SocketError('INVALID_REPLY_CODE', metadata.replyCode))
+            error = new SocketError('INVALID_REPLY_CODE', metadata.replyCode)
             break
+        }
+
+        if (error) {
+          this.socket.removeAllListeners()
+          reject(error)
         }
       }
 
@@ -303,7 +321,7 @@ export class TimeAttendance {
     return utils.timeToDate(tcp.getContent(data).readUInt32LE(0))
   }
 
-  async users () : Promise<Array<User>> {
+  async getUsers () : Promise<Array<User>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
     const content = tcp.getContent(data)
     const contentSize = content.readUInt32LE(0)
@@ -331,7 +349,7 @@ export class TimeAttendance {
     return users
   }
 
-  async attendanceRecords () : Promise<Array<AttendanceRecord>> {
+  async getAttendanceRecords () : Promise<Array<AttendanceRecord>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
     const content = tcp.getContent(data)
     const contentSize = content.readUInt32LE(0)
@@ -357,5 +375,47 @@ export class TimeAttendance {
     }
 
     return records
+  }
+
+  async restart () : Promise<boolean> {
+    this.put(CommandCodes.CMD_RESTART)
+
+    const data = await this.execute(CommandCodes.CMD_EXIT)
+
+    return tcp.isOk(data)
+  }
+
+  async sleep () : Promise<boolean> {
+    const data = await this.execute(CommandCodes.CMD_SLEEP)
+
+    return tcp.isOk(data)
+  }
+
+  async resume () : Promise<boolean> {
+    const data = await this.execute(CommandCodes.CMD_RESUME)
+
+    return tcp.isOk(data)
+  }
+
+  async shutdown () : Promise<boolean> {
+    this.put(CommandCodes.CMD_POWEROFF)
+
+    const data = await this.execute(CommandCodes.CMD_EXIT)
+
+    return tcp.isOk(data)
+  }
+
+  async testVoice () : Promise<boolean> {
+    const data = await this.execute(CommandCodes.CMD_TESTVOICE)
+
+    return tcp.isOk(data)
+  }
+
+  async isFingerScannerExist () : Promise<boolean> {
+    const data = await this.execute(CommandCodes.CMD_TEST_TEMP)
+
+    console.log(data)
+
+    return tcp.isOk(data)
   }
 }
