@@ -16,8 +16,8 @@ async function main () {
     await d.open()
     console.log('device is open')
 
-    await d.testFs()
-    console.log('did you hear something?')
+    const resp = await d.isFingerScannerExist()
+    console.log('is FS exist?', resp)
   } catch (err) {
     console.log('ERROR CODE:    ', err.code)
     console.log('ERROR MESSAGE: ', err.message)

@@ -416,8 +416,6 @@ export class TimeAttendance {
   async isFingerScannerExist () : Promise<boolean> {
     const data = await this.execute(CommandCodes.CMD_TEST_TEMP)
 
-    console.log(data)
-
     return tcp.isOk(data)
   }
 }
