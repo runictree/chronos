@@ -1,4 +1,4 @@
-export interface AttendanceRecord {
+export interface Record {
   id: number,
   userId?: string,
   verifyMethod: number,

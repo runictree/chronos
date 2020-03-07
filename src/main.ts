@@ -4,7 +4,7 @@ import * as tcp from './helpers/tcp'
 import * as utils from './helpers/utilities'
 import { CommandCodes, ReplyCodes, RequestCodes } from './protocol'
 import { User } from './User'
-import { AttendanceRecord } from './AttendanceRecord'
+import { Record } from './Record'
 
 export class TimeAttendance {
   host: string
@@ -351,7 +351,7 @@ export class TimeAttendance {
     return users
   }
 
-  async getAttendanceRecords () : Promise<Array<AttendanceRecord>> {
+  async getRecords () : Promise<Array<Record>> {
     const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
     const content = tcp.getContent(data)
     const contentSize = content.readUInt32LE(0)
@@ -360,7 +360,7 @@ export class TimeAttendance {
       throw new SocketError('UNMATCH_CONTENT_SIZE', { contentSize, contentLength: content.length - 4 })
     }
 
-    const records : Array<AttendanceRecord> = []
+    const records : Array<Record> = []
     const size = content.length
     const RECORD_DATA_SIZE = 40
 

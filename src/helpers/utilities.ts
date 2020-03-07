@@ -1,6 +1,6 @@
 import { MAX_USHORT } from './constants'
 import { User } from '../User'
-import { AttendanceRecord } from '../AttendanceRecord'
+import { Record } from '../Record'
 
 export function timeToDate (time: number) : string {
   const second = addZero(time % 60)
@@ -52,7 +52,7 @@ export function createChecksum (buffer: Buffer) {
   return sum
 }
 
-export function decodeRecordData (buffer: Buffer) : AttendanceRecord {
+export function decodeRecordData (buffer: Buffer) : Record {
   return {
     id: buffer.readUInt16LE(0),
     userId: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift(),

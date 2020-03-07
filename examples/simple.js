@@ -36,7 +36,7 @@ async function main () {
     console.log('first user', users[0])
     console.log('last user', users[users.length - 1])
 
-    const att = await d.getAttendanceRecords()
+    const att = await d.getRecords()
     console.log('attendence records was retrieved')
     console.log('first record', att[0])
     console.log('last record', att[att.length - 1])
