@@ -9,5 +9,5 @@ export interface User {
   tz1: number,
   tz2: number,
   tz3: number,
-  userId?: string
+  userCode?: string
 }

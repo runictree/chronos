@@ -110,9 +110,8 @@ export class TimeAttendance {
 
       const header = tcp.createHeader(command, this.sessionId, this.requestId, params)
 
-      const payload : Buffer[] = []
+      const content : Buffer[] = []
       let buffer = Buffer.from([])
-      let payloadSize = 0
       let timeoutWatcher : NodeJS.Timeout | undefined = undefined
 
       const timeoutWatcherSetup = () => {
@@ -127,27 +126,22 @@ export class TimeAttendance {
       }
 
       const concentrate = (data: Buffer) => {
-        if (tcp.isValidHeader(data)) {
-          if (buffer.length <= 0) {
-            buffer = data
-          } else {
-            buffer = Buffer.concat([ buffer, tcp.getContent(data) ])
-          }
-        } else {
-          buffer = Buffer.concat([ buffer, data ])
+        buffer = Buffer.concat([ buffer, data ])
+
+        const metadata = tcp.getMetadata(buffer)
+
+        if (buffer.length < metadata.size) {
+          return
         }
 
-        const packageSize = payloadSize + tcp.HEADER_SIZE
+        content.push(buffer.subarray(tcp.HEADER_SIZE, metadata.size))
 
-        if (buffer.length >= packageSize) {
-          payload.push(buffer.subarray(0, packageSize))
+        const next = buffer.subarray(metadata.size)
+        buffer = Buffer.from([])
 
-          const next = buffer.subarray(packageSize)
-          buffer = Buffer.from([])
-
-          if (next.length > 0) {
-            dataCallback(next)
-          }
+        if (next.length) {
+          dataCallback(next)
+          return
         }
       }
 
@@ -171,17 +165,16 @@ export class TimeAttendance {
               clearTimeout(timeoutWatcher)
             }
 
-            if (payload.length <= 0) {
+            if (content.length <= 0) {
               resolve(data)
             } else {
-              resolve(Buffer.concat(payload))
+              resolve(Buffer.concat(content))
             }
 
             break
 
           case ReplyCodes.CMD_PREPARE_DATA:
             // prepare reply code, initalize some variables before retrieve data
-            payloadSize = data.readUInt32LE(16)
 
             break
 
@@ -324,8 +317,7 @@ export class TimeAttendance {
   }
 
   async getUsers () : Promise<Array<User>> {
-    const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
-    const content = tcp.getContent(data)
+    const content = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
     const contentSize = content.readUInt32LE(0)
 
     if (contentSize !== content.length - 4) {
@@ -352,8 +344,7 @@ export class TimeAttendance {
   }
 
   async getRecords () : Promise<Array<Record>> {
-    const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
-    const content = tcp.getContent(data)
+    const content = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
     const contentSize = content.readUInt32LE(0)
 
     if (contentSize !== content.length - 4) {
@@ -361,19 +352,20 @@ export class TimeAttendance {
     }
 
     const records : Array<Record> = []
-    const size = content.length
+
     const RECORD_DATA_SIZE = 40
+    const OFFSET = 4
 
-    let offset = 4
-    let end = offset + RECORD_DATA_SIZE
+    let start = OFFSET
+    let end = start + RECORD_DATA_SIZE
 
-    while (end <= size) {
-      const sample = content.subarray(offset, end)
+    while (end <= contentSize) {
+      const sample = content.subarray(start, end)
       const record = utils.decodeRecordData(sample)
       records.push(record)
 
-      offset += RECORD_DATA_SIZE
-      end = offset + RECORD_DATA_SIZE
+      start += RECORD_DATA_SIZE
+      end = start + RECORD_DATA_SIZE
     }
 
     return records

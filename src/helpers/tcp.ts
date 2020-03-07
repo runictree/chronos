@@ -16,8 +16,11 @@ interface Metadata {
   /** Reply ID */
   replyId: number,
 
-  /** Content size + meta data size */
+  /** Content size + header size */
   size: number,
+
+  /** Content size + meta data size */
+  payloadSize: number,
 
   /** Content size */
   contentSize: number,
@@ -61,7 +64,7 @@ export function getContent (buffer: Buffer) : Buffer {
     return buffer
   }
 
-  return buffer.subarray(16)
+  return buffer.subarray(HEADER_SIZE)
 }
 
 export function getMetadata (buffer: Buffer) : Metadata {
@@ -69,14 +72,15 @@ export function getMetadata (buffer: Buffer) : Metadata {
     replyCode: buffer.readUInt16LE(8),
     sessionId: buffer.readUInt16LE(12),
     replyId: buffer.readUInt16LE(14),
-    size: buffer.readUInt16LE(4),
+    size: buffer.readUInt16LE(4) + (HEADER_SIZE - METADATA_SIZE),
+    payloadSize: buffer.readUInt16LE(4),
     contentSize: buffer.readUInt16LE(4) - METADATA_SIZE,
     checksum: buffer.readUInt16LE(10)
   }
 }
 
 export function isValidHeader (buffer: Buffer) : boolean {
-  return buffer.length >= 16 && buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0
+  return buffer.length >= HEADER_SIZE && buffer.compare(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]), 0, 4, 0, 4) === 0
 }
 
 export function isOk (data: Buffer) : boolean {

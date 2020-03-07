@@ -1,6 +1,6 @@
 export interface Record {
-  id: number,
-  userId?: string,
+  userId: number,
+  userCode?: string,
   verifyMethod: number,
   timestamp: string,
   verifyState: number

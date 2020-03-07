@@ -3,11 +3,11 @@ import { User } from '../User'
 import { Record } from '../Record'
 
 export function timeToDate (time: number) : string {
-  const second = addZero(time % 60)
-  const minute = addZero((time / 60) % 60)
-  const hour = addZero((time / 60 * 60) % 24)
-  const date = addZero(((time / (60 * 60 * 24)) % 31) + 1)
-  const month = addZero(((time / (60 * 60 * 24 * 31)) % 12) + 1)
+  const second = addLeadingZero(time % 60)
+  const minute = addLeadingZero((time / 60) % 60)
+  const hour = addLeadingZero((time / (60 * 60)) % 24)
+  const date = addLeadingZero(((time / (60 * 60 * 24)) % 31) + 1)
+  const month = addLeadingZero(((time / (60 * 60 * 24 * 31)) % 12) + 1)
 
   const year = getYear(time)
 
@@ -23,7 +23,7 @@ function getYear(time: number) : number {
   return Math.floor(time + 2000)
 }
 
-function addZero(num: number) : string {
+function addLeadingZero(num: number) : string {
   num = Math.floor(num)
 
   return `${num < 10 && num >= 0 ? '0' + num : num}`
@@ -54,8 +54,8 @@ export function createChecksum (buffer: Buffer) {
 
 export function decodeRecordData (buffer: Buffer) : Record {
   return {
-    id: buffer.readUInt16LE(0),
-    userId: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift(),
+    userId: buffer.readUInt16LE(0),
+    userCode: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift(),
     verifyMethod: buffer.readUInt8(26),
     timestamp: timeToDate(buffer.readUInt32LE(27)),
     verifyState: buffer.readUInt8(31)
@@ -74,7 +74,7 @@ export function decodeUserData (buffer: Buffer) : User {
     tz1: buffer.readUInt16LE(42),
     tz2: buffer.readUInt16LE(44),
     tz3: buffer.readUInt16LE(46),
-    userId: buffer.subarray(48, 48 + 9).toString('ascii').split('\0').shift()
+    userCode: buffer.subarray(48, 48 + 9).toString('ascii').split('\0').shift()
   }
 }
 

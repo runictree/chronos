@@ -1,5 +1,7 @@
+const fs = require('fs')
 const { TimeAttendance } = require('../dist/main')
-const { wait } = require('../dist/helpers/utilities')
+const utils = require('../dist/helpers/utilities')
+const tcp = require('../dist/helpers/tcp')
 
 async function main () {
   const host = process.argv[2] || '127.0.0.1'
@@ -32,14 +34,20 @@ async function main () {
     console.log('time', time)
 
     const users = await d.getUsers()
-    console.log('user information was received')
+    console.log('user information was received', users.length)
     console.log('first user', users[0])
     console.log('last user', users[users.length - 1])
 
     const att = await d.getRecords()
-    console.log('attendence records was retrieved')
+    console.log('attendence records was retrieved', att.length)
     console.log('first record', att[0])
     console.log('last record', att[att.length - 1])
+
+    const out = att.map((record) => {
+      return `${record.userCode}\t${record.timestamp}`
+    })
+
+    fs.writeFileSync('out.txt', out.join('\n'))
 
     // const enable = await d.enable()
     // console.log('enable device', enable)
