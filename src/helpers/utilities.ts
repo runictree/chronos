@@ -54,8 +54,8 @@ export function createChecksum (buffer: Buffer) {
 
 export function decodeRecordData (buffer: Buffer) : Record {
   return {
-    userId: buffer.readUInt16LE(0),
-    userCode: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift(),
+    id: buffer.readUInt16LE(0),
+    userId: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift(),
     verifyMethod: buffer.readUInt8(26),
     timestamp: timeToDate(buffer.readUInt32LE(27)),
     verifyState: buffer.readUInt8(31)
@@ -74,7 +74,7 @@ export function decodeUserData (buffer: Buffer) : User {
     tz1: buffer.readUInt16LE(42),
     tz2: buffer.readUInt16LE(44),
     tz3: buffer.readUInt16LE(46),
-    userCode: buffer.subarray(48, 48 + 9).toString('ascii').split('\0').shift()
+    userId: buffer.subarray(48, 48 + 9).toString('ascii').split('\0').shift()
   }
 }
 

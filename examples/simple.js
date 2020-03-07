@@ -44,7 +44,7 @@ async function main () {
     console.log('last record', att[att.length - 1])
 
     const out = att.map((record) => {
-      return `${record.userCode}\t${record.timestamp}`
+      return `${record.userId}\t${record.timestamp}\t${record.id}`
     })
 
     fs.writeFileSync('out.txt', out.join('\n'))

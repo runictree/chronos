@@ -110,7 +110,8 @@ export class TimeAttendance {
 
       const header = tcp.createHeader(command, this.sessionId, this.requestId, params)
 
-      const content : Buffer[] = []
+      let content = Buffer.from([])
+      let contentSize = 0
       let buffer = Buffer.from([])
       let timeoutWatcher : NodeJS.Timeout | undefined = undefined
 
@@ -126,22 +127,64 @@ export class TimeAttendance {
       }
 
       const concentrate = (data: Buffer) => {
-        buffer = Buffer.concat([ buffer, data ])
+        if (tcp.isValidHeader(data)) {
+          buffer = buffer.length > 0 ? Buffer.concat([ buffer, tcp.getContent(data) ]) : data
+        } else {
+          buffer = Buffer.concat([ buffer, data ])
+        }
 
         const metadata = tcp.getMetadata(buffer)
 
-        if (buffer.length < metadata.size) {
+        // when data come with proper header
+        if (metadata.contentSize > 0) {
+          if (buffer.length < metadata.size) {
+            return
+          }
+
+          content = Buffer.concat([ content, buffer.subarray(tcp.HEADER_SIZE, metadata.size) ])
+
+          const next = buffer.subarray(metadata.size)
+          buffer = Buffer.from([])
+
+          if (next.length > 0) {
+            dataCallback(next)
+          }
+
           return
         }
 
-        content.push(buffer.subarray(tcp.HEADER_SIZE, metadata.size))
+        // in some case the device will send first CMD_DATA without content and metadata.contentSize is 0
+        // after that, it will continue send content without header
+        // in this case, need to compare with contentSize that send with CMD_PREPARE_DATA
+        const packageSize = contentSize + tcp.HEADER_SIZE
 
-        const next = buffer.subarray(metadata.size)
-        buffer = Buffer.from([])
+        if (buffer.length >= packageSize) {
+          content = Buffer.concat([ content, buffer.subarray(tcp.HEADER_SIZE, packageSize) ])
 
-        if (next.length) {
-          dataCallback(next)
+          const next = buffer.subarray(packageSize)
+          buffer = Buffer.from([])
+
+          if (next.length > 0) {
+            dataCallback(next)
+          }
+
           return
+        }
+
+        // for sake of safety
+        // when the device mix proper header and without header together
+        const wantMore = contentSize - content.length
+        const wantMoreWithHeader = tcp.HEADER_SIZE + wantMore
+
+        if (buffer.length >= wantMoreWithHeader) {
+          content = Buffer.concat([ content, buffer.subarray(tcp.HEADER_SIZE, wantMoreWithHeader) ])
+
+          const next = buffer.subarray(wantMoreWithHeader)
+          buffer = Buffer.from([])
+
+          if (next.length > 0) {
+            dataCallback(next)
+          }
         }
       }
 
@@ -165,16 +208,17 @@ export class TimeAttendance {
               clearTimeout(timeoutWatcher)
             }
 
-            if (content.length <= 0) {
-              resolve(data)
+            if (content.length > 0) {
+              resolve(content)
             } else {
-              resolve(Buffer.concat(content))
+              resolve(data)
             }
 
             break
 
           case ReplyCodes.CMD_PREPARE_DATA:
             // prepare reply code, initalize some variables before retrieve data
+            contentSize = data.readUInt32LE(16)
 
             break
 

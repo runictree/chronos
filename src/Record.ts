@@ -1,8 +1,33 @@
 export interface Record {
-  userId: number,
-  userCode?: string,
+  /**
+   * Internal ID
+   *
+   * In some devices, it is Record ID, but some devices it is internal user ID
+   *
+   * For reliable user ID, use UserId instead
+   */
+  id: number,
+
+  /**
+   * User ID
+   *
+   * Input via Add User in the device menu
+   */
+  userId?: string,
+
+  /**
+   * Verification Method
+   */
   verifyMethod: number,
+
+  /**
+   * Attendance Record timestamp
+   */
   timestamp: string,
+
+  /**
+   * Verification State
+   */
   verifyState: number
 }
 
