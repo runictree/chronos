@@ -164,6 +164,16 @@ export class TimeAttendance {
           const next = buffer.subarray(packageSize)
           buffer = Buffer.from([])
 
+          if (content.length === contentSize && next.length >= tcp.HEADER_SIZE) {
+            // retrive all content but buffer has extra attach data
+            // as I do not sure what it is, but the tail is valid header, so I grab it
+            const tail = next.subarray(next.length - tcp.HEADER_SIZE)
+
+            dataCallback(tail)
+
+            return
+          }
+
           if (next.length > 0) {
             dataCallback(next)
           }
