@@ -223,6 +223,11 @@ export class TimeAttendance {
             break
 
           case ReplyCodes.CMD_DATA:
+            if (data.length === metadata.size) {
+              resolve(data)
+              break
+            }
+
             concentrate(data)
             break
 
@@ -276,8 +281,9 @@ export class TimeAttendance {
 
     switch (metadata.replyCode) {
       case ReplyCodes.CMD_ACK_DATA:
-        // small size data, device will return immediately and ready to use
-        return data
+      case ReplyCodes.CMD_DATA:
+        // small data size, device will return immediately
+        return tcp.getContent(data)
 
       case ReplyCodes.CMD_ACK_OK:
         // large size data, only header is returned
