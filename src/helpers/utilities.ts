@@ -53,9 +53,10 @@ export function createChecksum (buffer: Buffer) {
 }
 
 export function decodeRecordData (buffer: Buffer) : Record {
+  const uid = buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift()
   return {
     id: buffer.readUInt16LE(0),
-    userId: buffer.subarray(2, 2 + 9).toString('ascii').split('\0').shift(),
+    userId: uid?.replace(/\r?\n|\r/, ''),
     verifyMethod: buffer.readUInt8(26),
     timestamp: timeToDate(buffer.readUInt32LE(27)),
     verifyState: buffer.readUInt8(31)
