@@ -379,25 +379,27 @@ export class TimeAttendance {
   async getUsers () : Promise<Array<User>> {
     const content = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
     const contentSize = content.readUInt32LE(0)
+    const contentLength = content.length
 
-    if (contentSize !== content.length - 4) {
-      throw new SocketError('UNMATCH_CONTENT_SIZE', { contentSize, contentLength: content.length - 4 })
+    if (contentSize !== contentLength - 4) {
+      throw new SocketError('UNMATCH_CONTENT_SIZE', { expected: contentSize, got: contentLength - 4 })
     }
 
     const users : Array<User> = []
-    const size = content.length
+
     const USER_DATA_SIZE = 72
+    const OFFSET = 4
 
-    let offset = 4
-    let end = offset + USER_DATA_SIZE
+    let start = OFFSET
+    let end = start + USER_DATA_SIZE
 
-    while (end <= size) {
-      const sample = content.subarray(offset, end)
+    while (end <= contentLength) {
+      const sample = content.subarray(start, end)
       const user = utils.decodeUserData(sample)
       users.push(user)
 
-      offset += USER_DATA_SIZE
-      end = offset + USER_DATA_SIZE
+      start = end
+      end += USER_DATA_SIZE
     }
 
     return users
@@ -406,9 +408,10 @@ export class TimeAttendance {
   async getRecords () : Promise<Array<Record>> {
     const content = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
     const contentSize = content.readUInt32LE(0)
+    const contentLength = content.length
 
-    if (contentSize !== content.length - 4) {
-      throw new SocketError('UNMATCH_CONTENT_SIZE', { contentSize, contentLength: content.length - 4 })
+    if (contentSize !== contentLength - 4) {
+      throw new SocketError('UNMATCH_CONTENT_SIZE', { expected: contentSize, got: contentLength - 4 })
     }
 
     const records : Array<Record> = []
@@ -419,13 +422,13 @@ export class TimeAttendance {
     let start = OFFSET
     let end = start + RECORD_DATA_SIZE
 
-    while (end <= contentSize) {
+    while (end <= contentLength) {
       const sample = content.subarray(start, end)
       const record = utils.decodeRecordData(sample)
       records.push(record)
 
-      start += RECORD_DATA_SIZE
-      end = start + RECORD_DATA_SIZE
+      start = end
+      end += RECORD_DATA_SIZE
     }
 
     return records
