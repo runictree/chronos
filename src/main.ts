@@ -198,11 +198,22 @@ export class TimeAttendance {
         }
       }
 
+      const manage = (data: Buffer) => {
+        const index = data.indexOf(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]))
+
+        if (index > 0) {
+          concentrate(data.subarray(0, index))
+          dataCallback(data.subarray(index))
+        } else {
+          concentrate(data)
+        }
+      }
+
       const dataCallback = (data: Buffer) => {
         timeoutWatcherSetup()
 
         if (!tcp.isValidHeader(data)) {
-          concentrate(data)
+          manage(data)
           return
         }
 
@@ -238,7 +249,7 @@ export class TimeAttendance {
               break
             }
 
-            concentrate(data)
+            manage(data)
             break
 
           case ReplyCodes.CMD_ACK_UNAUTH:
