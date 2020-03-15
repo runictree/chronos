@@ -1,14 +1,8 @@
-#### Command/Reply Identifiers ####
+# Command Codes and Implement Functions
 
-The command/reply id field may be used for two purposes:
+This command codes was taken from [adrobinoga/zk-protocol](https://github.com/adrobinoga/zk-protocol).
 
-1. Instruct the machine to do something.
-2. Return an exit code from a given procedure.
-3. Report events (corresponds to `CMD_REG_EVENT`).
-
-The command id correspondence is given in the following table:
-
-|Name			|Description						|Value[base10]	|Value[hex]	|Implement? |
+|Name			|Description						|Value[base10]	|Value[hex]	|Function |
 |---			|---							|---		|---		|---    |
 |CMD_CONNECT		|Begin connection.					|1000		|03e8		|open() |
 |CMD_EXIT		|Disconnect.						|1001		|03e9		|close() |
@@ -81,17 +75,3 @@ The command id correspondence is given in the following table:
 |CMD_SET_TIME		|Set machine time.					|202		|00ca		|
 |CMD_REG_EVENT		|Realtime events.					|500		|01f4		|
 
-See the codification of reply codes in the following table:
-
-|Name			|Description						|Value[base10]	|Value[hex]	|
-|---			|---							|---		|---		|
-|CMD_ACK_OK		|The request was processed sucessfully.			|2000		|07d0		|
-|CMD_ACK_ERROR		|There was an error when processing the request.	|2001		|07d1		|
-|CMD_ACK_DATA		|							|2002		|07d2		|
-|CMD_ACK_RETRY		|							|2003		|07d3		|
-|CMD_ACK_REPEAT		|							|2004		|07d4		|
-|CMD_ACK_UNAUTH		|Connection not authorized.				|2005		|07d5		|
-|CMD_ACK_UNKNOWN	|Received unknown command.				|65535		|ffff		|
-|CMD_ACK_ERROR_CMD	|							|65533		|fffd		|
-|CMD_ACK_ERROR_INIT	|							|65532		|fffc		|
-|CMD_ACK_ERROR_DATA	|							|65531		|fffb		|
