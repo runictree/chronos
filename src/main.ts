@@ -4,7 +4,7 @@ import * as tcp from './helpers/tcp'
 import * as utils from './helpers/utilities'
 import { CommandCodes, ReplyCodes, RequestCodes } from './protocol'
 import { User } from './User'
-import { AttendanceRecord } from './AttendanceRecord'
+import { Record } from './Record'
 
 export class TimeAttendance {
   host: string
@@ -110,9 +110,9 @@ export class TimeAttendance {
 
       const header = tcp.createHeader(command, this.sessionId, this.requestId, params)
 
-      const payload : Buffer[] = []
+      let content = Buffer.from([])
+      let contentSize = 0
       let buffer = Buffer.from([])
-      let payloadSize = 0
       let timeoutWatcher : NodeJS.Timeout | undefined = undefined
 
       const timeoutWatcherSetup = () => {
@@ -128,21 +128,68 @@ export class TimeAttendance {
 
       const concentrate = (data: Buffer) => {
         if (tcp.isValidHeader(data)) {
-          if (buffer.length <= 0) {
-            buffer = data
-          } else {
-            buffer = Buffer.concat([ buffer, tcp.getContent(data) ])
-          }
+          buffer = buffer.length > 0 ? Buffer.concat([ buffer, tcp.getContent(data) ]) : data
         } else {
           buffer = Buffer.concat([ buffer, data ])
         }
 
-        const packageSize = payloadSize + tcp.HEADER_SIZE
+        const metadata = tcp.getMetadata(buffer)
+
+        // when data come with proper header
+        if (metadata.contentSize > 0) {
+          if (buffer.length < metadata.size) {
+            return
+          }
+
+          content = Buffer.concat([ content, buffer.subarray(tcp.HEADER_SIZE, metadata.size) ])
+
+          const next = buffer.subarray(metadata.size)
+          buffer = Buffer.from([])
+
+          if (next.length > 0) {
+            dataCallback(next)
+          }
+
+          return
+        }
+
+        // in some case the device will send first CMD_DATA without content and metadata.contentSize is 0
+        // after that, it will continue send content without header
+        // in this case, need to compare with contentSize that send with CMD_PREPARE_DATA
+        const packageSize = contentSize + tcp.HEADER_SIZE
 
         if (buffer.length >= packageSize) {
-          payload.push(buffer.subarray(0, packageSize))
+          content = Buffer.concat([ content, buffer.subarray(tcp.HEADER_SIZE, packageSize) ])
 
           const next = buffer.subarray(packageSize)
+          buffer = Buffer.from([])
+
+          if (content.length === contentSize && next.length >= tcp.HEADER_SIZE) {
+            // retrive all content but buffer has extra attach data
+            // as I do not sure what it is, but the tail is valid header, so I grab it
+            const tail = next.subarray(next.length - tcp.HEADER_SIZE)
+
+            dataCallback(tail)
+
+            return
+          }
+
+          if (next.length > 0) {
+            dataCallback(next)
+          }
+
+          return
+        }
+
+        // for sake of safety
+        // when the device mix proper header and without header together
+        const wantMore = contentSize - content.length
+        const wantMoreWithHeader = tcp.HEADER_SIZE + wantMore
+
+        if (buffer.length >= wantMoreWithHeader) {
+          content = Buffer.concat([ content, buffer.subarray(tcp.HEADER_SIZE, wantMoreWithHeader) ])
+
+          const next = buffer.subarray(wantMoreWithHeader)
           buffer = Buffer.from([])
 
           if (next.length > 0) {
@@ -151,11 +198,22 @@ export class TimeAttendance {
         }
       }
 
+      const manage = (data: Buffer) => {
+        const index = data.indexOf(Buffer.from([ 0x50, 0x50, 0x82, 0x7d ]))
+
+        if (index > 0) {
+          concentrate(data.subarray(0, index))
+          dataCallback(data.subarray(index))
+        } else {
+          concentrate(data)
+        }
+      }
+
       const dataCallback = (data: Buffer) => {
         timeoutWatcherSetup()
 
         if (!tcp.isValidHeader(data)) {
-          concentrate(data)
+          manage(data)
           return
         }
 
@@ -171,22 +229,27 @@ export class TimeAttendance {
               clearTimeout(timeoutWatcher)
             }
 
-            if (payload.length <= 0) {
-              resolve(data)
+            if (content.length > 0) {
+              resolve(content)
             } else {
-              resolve(Buffer.concat(payload))
+              resolve(data)
             }
 
             break
 
           case ReplyCodes.CMD_PREPARE_DATA:
             // prepare reply code, initalize some variables before retrieve data
-            payloadSize = data.readUInt32LE(16)
+            contentSize = data.readUInt32LE(16)
 
             break
 
           case ReplyCodes.CMD_DATA:
-            concentrate(data)
+            if (data.length === metadata.size) {
+              resolve(data)
+              break
+            }
+
+            manage(data)
             break
 
           case ReplyCodes.CMD_ACK_UNAUTH:
@@ -239,8 +302,9 @@ export class TimeAttendance {
 
     switch (metadata.replyCode) {
       case ReplyCodes.CMD_ACK_DATA:
-        // small size data, device will return immediately and ready to use
-        return data
+      case ReplyCodes.CMD_DATA:
+        // small data size, device will return immediately
+        return tcp.getContent(data)
 
       case ReplyCodes.CMD_ACK_OK:
         // large size data, only header is returned
@@ -324,56 +388,58 @@ export class TimeAttendance {
   }
 
   async getUsers () : Promise<Array<User>> {
-    const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
-    const content = tcp.getContent(data)
+    const content = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_USERS)
     const contentSize = content.readUInt32LE(0)
+    const contentLength = content.length
 
-    if (contentSize !== content.length - 4) {
-      throw new SocketError('UNMATCH_CONTENT_SIZE', { contentSize, contentLength: content.length - 4 })
+    if (contentSize !== contentLength - 4) {
+      throw new SocketError('UNMATCH_CONTENT_SIZE', { expected: contentSize, got: contentLength - 4 })
     }
 
     const users : Array<User> = []
-    const size = content.length
+
     const USER_DATA_SIZE = 72
+    const OFFSET = 4
 
-    let offset = 4
-    let end = offset + USER_DATA_SIZE
+    let start = OFFSET
+    let end = start + USER_DATA_SIZE
 
-    while (end <= size) {
-      const sample = content.subarray(offset, end)
+    while (end <= contentLength) {
+      const sample = content.subarray(start, end)
       const user = utils.decodeUserData(sample)
       users.push(user)
 
-      offset += USER_DATA_SIZE
-      end = offset + USER_DATA_SIZE
+      start = end
+      end += USER_DATA_SIZE
     }
 
     return users
   }
 
-  async getAttendanceRecords () : Promise<Array<AttendanceRecord>> {
-    const data = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
-    const content = tcp.getContent(data)
+  async getRecords () : Promise<Array<Record>> {
+    const content = await this.run(CommandCodes.CMD_DATA_WRRQ, RequestCodes.REQ_ATT_RECORDS)
     const contentSize = content.readUInt32LE(0)
+    const contentLength = content.length
 
-    if (contentSize !== content.length - 4) {
-      throw new SocketError('UNMATCH_CONTENT_SIZE', { contentSize, contentLength: content.length - 4 })
+    if (contentSize !== contentLength - 4) {
+      throw new SocketError('UNMATCH_CONTENT_SIZE', { expected: contentSize, got: contentLength - 4 })
     }
 
-    const records : Array<AttendanceRecord> = []
-    const size = content.length
+    const records : Array<Record> = []
+
     const RECORD_DATA_SIZE = 40
+    const OFFSET = 4
 
-    let offset = 4
-    let end = offset + RECORD_DATA_SIZE
+    let start = OFFSET
+    let end = start + RECORD_DATA_SIZE
 
-    while (end <= size) {
-      const sample = content.subarray(offset, end)
+    while (end <= contentLength) {
+      const sample = content.subarray(start, end)
       const record = utils.decodeRecordData(sample)
       records.push(record)
 
-      offset += RECORD_DATA_SIZE
-      end = offset + RECORD_DATA_SIZE
+      start = end
+      end += RECORD_DATA_SIZE
     }
 
     return records

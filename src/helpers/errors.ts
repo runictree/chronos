@@ -12,6 +12,6 @@ export const errors : { [key: string]: string } = Object.freeze({
   UNAUTHORIZED: 'Device report back with unauthorized',
   UNKNOWN_COMMAND: 'Device is not support this command',
   PROCESSING_ERROR: 'Error occurred while processing data',
-  UNMATCH_CONTENT_SIZE: 'Reported content size is unmatch with transferred content size, (partial transferred)',
+  UNMATCH_CONTENT_SIZE: 'Report content size is unmatch with transferred data size',
   SIZE_MISMATCH: 'Size at position 16+1 is unmatch with position 16+5, please report'
 })
